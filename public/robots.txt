@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://globaltelecomunicacionesdigitales.vercel.app/sitemap.xml

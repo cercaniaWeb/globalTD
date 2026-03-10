@@ -25,6 +25,13 @@
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
+@utility glass-dark {
+  background-color: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.8);
+}
+
 @utility text-glow {
   text-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
 }
@@ -50,15 +57,39 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   margin: 0;
 }
+
 @keyframes ring {
-  0% { transform: rotate(0); }
-  10% { transform: rotate(15deg); }
-  20% { transform: rotate(-10deg); }
-  30% { transform: rotate(8deg); }
-  40% { transform: rotate(-5deg); }
-  50% { transform: rotate(3deg); }
-  60% { transform: rotate(-2deg); }
-  100% { transform: rotate(0); }
+  0% {
+    transform: rotate(0);
+  }
+
+  10% {
+    transform: rotate(15deg);
+  }
+
+  20% {
+    transform: rotate(-10deg);
+  }
+
+  30% {
+    transform: rotate(8deg);
+  }
+
+  40% {
+    transform: rotate(-5deg);
+  }
+
+  50% {
+    transform: rotate(3deg);
+  }
+
+  60% {
+    transform: rotate(-2deg);
+  }
+
+  100% {
+    transform: rotate(0);
+  }
 }
 
 .animate-ring {

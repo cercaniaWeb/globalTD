@@ -11,14 +11,14 @@ export default function Home() {
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 glass border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3" aria-label="Global Telecom Home">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/30">
-              <Shield className="text-white w-6 h-6" />
+              <Shield className="text-white w-6 h-6" aria-hidden="true" />
             </div>
             <span className="text-xl font-black uppercase tracking-tighter italic">
               Global <span className="text-primary">Telecom</span>
             </span>
-          </div>
+          </Link>
 
           <div className="hidden md:flex items-center gap-10 text-slate-400">
             <Link href="#servicios" className="text-[10px] font-black uppercase tracking-[3px] hover:text-white transition-colors">Servicios</Link>
@@ -27,8 +27,8 @@ export default function Home() {
             <Link href="/login" className="px-6 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-[3px] hover:bg-blue-600 transition-all shadow-lg shadow-blue-900/40">Acceso Sistema</Link>
           </div>
 
-          <button className="md:hidden p-2 text-white">
-            <Menu className="w-6 h-6" />
+          <button className="md:hidden p-2 text-white" aria-label="Abrir Menú">
+            <Menu className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
       </nav>
@@ -82,7 +82,7 @@ export default function Home() {
                 <Shield className="w-56 h-56 text-primary/5 animate-in zoom-in duration-1000" />
                 <div className="absolute bottom-10 left-10 right-10 p-8 glass backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl flex items-center gap-8 group hover:scale-[1.02] transition-transform">
                   <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center border border-green-500/20">
-                    <CheckCircle2 className="text-green-500 w-8 h-8" />
+                    <CheckCircle2 className="text-green-500 w-8 h-8" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-black uppercase tracking-widest text-slate-200">Terminal Verificada</p>

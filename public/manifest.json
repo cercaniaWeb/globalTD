@@ -1,0 +1,17 @@
+{
+    "name": "Global Telecom Operations",
+    "short_name": "Global Ops",
+    "description": "Sistema avanzado de gestión de cuadrillas y reselling CCTV.",
+    "start_url": "/dashboard",
+    "display": "standalone",
+    "background_color": "#020617",
+    "theme_color": "#2563eb",
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
