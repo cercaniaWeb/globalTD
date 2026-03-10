@@ -19,3 +19,12 @@ CREATE TABLE dispositivos_hik (
   canales_activos INTEGER,
   ubicacion_lat_long POINT      -- Para el mapa que vimos en tu perfil
 );
+-- Tabla para los prospectos (leads) del configurador
+CREATE TABLE leads (
+  id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  details TEXT,
+  estimate TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

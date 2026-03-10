@@ -41,6 +41,7 @@ export default function AdminDashboard() {
             .order('created_at', { ascending: false })
 
         if (data) setLeads(data)
+        if (error) console.error('Error fetching leads:', error)
         setLoading(false)
     }
 
