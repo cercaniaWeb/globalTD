@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Search, ShoppingCart, Info, CheckCircle, Package, ShieldCheck, ArrowLeft } from 'lucide-react'
 
-const CATEGORIES = ["Todos", "CCTV", "Control de Acceso", "Redes", "Detección de Fuego", "Energía"];
+const CATEGORIES = ["Todos", "CCTV", "Control de Acceso", "Redes", "Energía"];
 
 const MOCK_PRODUCTS = [
     {
@@ -62,8 +62,7 @@ export default function StorePage() {
             "CCTV": ["Videovigilancia", "Cámaras IP", "DVR", "NVR", "CCTV"],
             "Control de Acceso": ["Control de Acceso", "Videoporteros IP", "Cerraduras"],
             "Redes": ["Redes", "Networking", "Wi-Fi", "Switches"],
-            "Energía": ["Energía", "UPS", "Baterías", "Fuentes de Poder"],
-            "Detección de Fuego": ["Detección de Fuego", "Incendio", "Alarmas de Fuego"]
+            "Energía": ["Energía", "UPS", "Baterías", "Fuentes de Poder"]
         };
 
         const targetCategories = categoryMap[filter] || [filter];
