@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { XR, createXRStore, useXRHitTest, XRDomOverlay } from '@react-three/xr'
+import { XR, createXRStore, useXRHitTest, XRDomOverlay, useXR } from '@react-three/xr'
 import { OrbitControls, Text, Line, Float } from '@react-three/drei'
 import * as THREE from 'three'
 import { X, Ruler, Save, Trash2, Box, Info } from 'lucide-react'
@@ -125,6 +125,85 @@ function ARSceneProxy({ setPoints, points }: any) {
 
 // ─── Componente Principal ─────────────────────────────────────
 
+function ARUIOverlay({ points, setPoints, isSaving, saveToSupabase, onClose, distance }: any) {
+    const session = useXR((state) => state.session)
+    const isPresenting = session !== null
+
+    return (
+        <XRDomOverlay>
+            <div className={`fixed inset-0 flex flex-col p-6 pointer-events-none transition-all duration-700 ${isPresenting ? 'bg-transparent' : 'bg-slate-950/90 backdrop-blur-xl'}`}>
+                {/* Top Header */}
+                <div className="flex justify-between items-start pointer-events-auto">
+                    <button
+                        onClick={onClose}
+                        className="w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all shadow-2xl"
+                    >
+                        <X size={24} />
+                    </button>
+
+                    <div className="bg-black/60 backdrop-blur-2xl border border-primary/30 px-6 py-2 rounded-full shadow-2xl text-center flex flex-col items-center">
+                        <span className="text-[8px] font-black tracking-[3px] text-primary uppercase leading-none mb-1">Cálculo Espacial</span>
+                        <span className="text-2xl font-mono font-black text-white italic leading-none">{distance.toFixed(3)}m</span>
+                    </div>
+
+                    <div className="w-12"></div>
+                </div>
+
+                {/* Instructions Overlay (Only when not presenting or no points) */}
+                {!isPresenting && (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 max-w-xs mx-auto pointer-events-none">
+                        <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center animate-pulse">
+                            <Box size={40} className="text-primary" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-lg font-black uppercase tracking-tighter text-white">Preparado para Medir</h3>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                                Inicia Leviton para activar la cámara AR y medir superficies físicas con precisión milimétrica.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Bottom Action Bar */}
+                <div className="mt-auto flex flex-col items-center gap-6 pointer-events-auto pb-10">
+                    {points.length > 0 && (
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setPoints([])}
+                                className="w-14 h-14 bg-red-500/20 backdrop-blur-md border border-red-500/40 rounded-full flex items-center justify-center text-red-500 active:scale-95 transition-all shadow-xl"
+                            >
+                                <Trash2 size={20} />
+                            </button>
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest py-2 px-4 bg-white/10 rounded-full backdrop-blur-md">
+                                {points.length === 1 ? 'Punto A Fijado' : 'Segmento Listo'}
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="flex w-full max-w-sm gap-4">
+                        <button
+                            className={`flex-1 h-16 rounded-[24px] font-black uppercase text-[12px] tracking-[4px] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${isPresenting ? 'bg-primary/40 border border-primary/60 text-white' : 'bg-primary text-white border-4 border-white/10'}`}
+                            onClick={() => store.enterAR()}
+                        >
+                            <Box size={20} /> {isPresenting ? (points.length === 1 ? 'Marca Punto B' : 'Medir Pared') : 'Iniciar Leviton'}
+                        </button>
+
+                        {points.length === 2 && (
+                            <button
+                                disabled={isSaving}
+                                onClick={saveToSupabase}
+                                className="w-16 h-16 bg-emerald-500 text-white rounded-[24px] flex items-center justify-center shadow-2xl active:scale-95 transition-all border border-white/20 animate-bounce"
+                            >
+                                <Save size={24} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </XRDomOverlay>
+    )
+}
+
 export default function ARMeasurement({ lead, onClose, addNotification }: any) {
     const [points, setPoints] = useState<THREE.Vector3[]>([])
     const [isSaving, setIsSaving] = useState(false)
@@ -161,59 +240,24 @@ export default function ARMeasurement({ lead, onClose, addNotification }: any) {
     }
 
     return (
-        <div className="fixed inset-0 z-[150] bg-black animate-in fade-in duration-700">
-            <Canvas shadows camera={{ position: [0, 2, 5], fov: 45 }}>
+        <div className="fixed inset-0 z-[150] overflow-hidden bg-transparent">
+            <Canvas
+                shadows
+                gl={{ alpha: true, antialias: true, preserveDrawingBuffer: true }}
+                camera={{ position: [0, 2, 5], fov: 45 }}
+                onCreated={({ gl }) => {
+                    gl.setClearColor(0x000000, 0)
+                }}
+            >
                 <XR store={store}>
-                    {/* UI Overlay inside AR */}
-                    <XRDomOverlay>
-                        <div className="flex flex-col h-full w-full p-8 pointer-events-none">
-                            {/* Top Bar */}
-                            <div className="flex justify-between items-start pointer-events-auto">
-                                <button
-                                    onClick={onClose}
-                                    className="w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center text-white active:scale-95 transition-all shadow-2xl"
-                                >
-                                    <X size={24} />
-                                </button>
-
-                                <div className="bg-black/60 backdrop-blur-2xl border border-white/10 px-8 py-3 rounded-full shadow-2xl text-center flex flex-col items-center">
-                                    <span className="text-[10px] font-black tracking-[4px] text-primary uppercase">Métrica</span>
-                                    <span className="text-3xl font-mono font-black text-white italic leading-tight">{distance.toFixed(3)}m</span>
-                                </div>
-
-                                <div className="w-14"></div>
-                            </div>
-
-                            {/* Bottom Bar */}
-                            <div className="mt-auto flex justify-center items-center gap-4 pointer-events-auto">
-                                {points.length > 0 && (
-                                    <button
-                                        onClick={() => setPoints([])}
-                                        className="w-16 h-16 bg-red-500/20 backdrop-blur-xl border border-red-500/40 rounded-full flex items-center justify-center text-red-500 active:scale-95 transition-all shadow-2xl"
-                                    >
-                                        <Trash2 size={24} />
-                                    </button>
-                                )}
-
-                                <button
-                                    className="flex-1 max-w-[240px] h-20 bg-primary text-white rounded-full font-black uppercase text-[12px] tracking-[4px] shadow-2xl active:scale-95 transition-all border-4 border-white/10 flex items-center justify-center gap-3"
-                                    onClick={() => store.enterAR()}
-                                >
-                                    {points.length === 1 ? 'Marcar Punto B' : 'Iniciar Leviton'}
-                                </button>
-
-                                {points.length === 2 && (
-                                    <button
-                                        disabled={isSaving}
-                                        onClick={saveToSupabase}
-                                        className="w-16 h-16 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-all border border-white/20 animate-pulse"
-                                    >
-                                        <Save size={24} />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </XRDomOverlay>
+                    <ARUIOverlay
+                        points={points}
+                        setPoints={setPoints}
+                        isSaving={isSaving}
+                        saveToSupabase={saveToSupabase}
+                        onClose={onClose}
+                        distance={distance}
+                    />
 
                     <ambientLight intensity={1} />
                     <pointLight position={[10, 10, 10]} intensity={2} />
