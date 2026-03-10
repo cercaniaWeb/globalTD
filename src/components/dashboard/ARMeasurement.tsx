@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { XR, createXRStore, useXRHitTest, XRDomOverlay, useXR } from '@react-three/xr'
 import { OrbitControls, Text, Line, Float } from '@react-three/drei'
@@ -8,8 +8,14 @@ import * as THREE from 'three'
 import { X, Ruler, Save, Trash2, Box, Info } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
-// ─── Inicializar el Store de XR ──────────────────────────────
-const store = createXRStore()
+// ─── Inicializar el Store de XR con capacidades de ARCore ─────
+// Activamos hit-test y depth-sensing para máxima precisión en Android (Google ARCore)
+const store = createXRStore({
+    hand: false,
+    controller: false,
+    hitTest: true,
+    depthSensing: true
+})
 
 // ─── Componentes 3D ──────────────────────────────────────────
 
@@ -124,96 +130,10 @@ function ARSceneProxy({ setPoints, points }: any) {
 
 // ─── Componente Principal ─────────────────────────────────────
 
-// ─── Sub-Componente de Interfaz ──────────────────────────────
-function ARInterface({ points, setPoints, isSaving, saveToSupabase, onClose, distance }: any) {
-    const session = useXR((state) => state.session)
-    const isPresenting = session !== null
-
-    const uiContent = (
-        <div className={`fixed inset-0 flex flex-col p-6 pointer-events-none z-[10000] ${isPresenting ? '' : 'bg-slate-950/95 backdrop-blur-2xl'}`}>
-            {/* Top Bar */}
-            <div className="flex justify-between items-start pointer-events-auto">
-                <button
-                    onClick={onClose}
-                    className="w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all shadow-2xl"
-                >
-                    <X size={24} />
-                </button>
-
-                <div className="bg-black/80 backdrop-blur-2xl border border-primary/40 px-6 py-2 rounded-full shadow-2xl text-center flex flex-col items-center">
-                    <span className="text-[7px] font-black tracking-[3px] text-primary uppercase leading-none mb-1">Métrica Real</span>
-                    <span className="text-2xl font-mono font-black text-white italic leading-none">{distance.toFixed(3)}m</span>
-                </div>
-
-                <div className="w-12"></div>
-            </div>
-
-            {/* Standby Instructions */}
-            {!isPresenting && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8 max-w-xs mx-auto">
-                    <div className="relative">
-                        <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center animate-ping absolute inset-0"></div>
-                        <div className="w-24 h-24 bg-primary/30 rounded-3xl flex items-center justify-center relative border border-primary/50 rotate-3 animate-pulse">
-                            <Ruler size={48} className="text-primary -rotate-12" />
-                        </div>
-                    </div>
-                    <div className="space-y-3">
-                        <h2 className="text-2xl font-black uppercase tracking-tighter text-white">Leviton <span className="text-primary italic">3D</span></h2>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[2px] leading-relaxed">
-                            Herramienta de telemetría para cableado y canalizaciones.
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {/* Bottom Controls */}
-            <div className="mt-auto flex flex-col items-center gap-6 pointer-events-auto pb-10">
-                {points.length > 0 && (
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setPoints([])}
-                            className="w-14 h-14 bg-red-600/20 backdrop-blur-md border border-red-500/40 rounded-full flex items-center justify-center text-red-500 active:scale-95 transition-all shadow-xl"
-                        >
-                            <Trash2 size={24} />
-                        </button>
-                        <span className="text-[9px] font-black text-white uppercase tracking-[4px] py-2 px-6 bg-white/5 border border-white/10 rounded-full backdrop-blur-xl">
-                            {points.length === 1 ? 'Marcar Punto B' : 'Medición Lista'}
-                        </span>
-                    </div>
-                )}
-
-                <div className="flex w-full max-w-sm gap-4">
-                    <button
-                        className={`flex-1 h-20 rounded-[28px] font-black uppercase text-[12px] tracking-[4px] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${isPresenting ? 'bg-primary/20 border-2 border-primary/60 text-primary animate-pulse' : 'bg-primary text-white border-b-8 border-blue-900'}`}
-                        onClick={() => store.enterAR()}
-                    >
-                        <Box size={24} /> {isPresenting ? 'Marca Punto' : 'Iniciar Cámara Leviton'}
-                    </button>
-
-                    {points.length === 2 && (
-                        <button
-                            disabled={isSaving}
-                            onClick={saveToSupabase}
-                            className="w-20 h-20 bg-emerald-500 text-white rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-all border-b-8 border-emerald-900"
-                        >
-                            <Save size={28} />
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-20">
-                <span className="text-[6px] font-black text-white uppercase tracking-[6px]">GT SPATIAL TELEMETRY UNIT</span>
-            </div>
-        </div>
-    )
-
-    return isPresenting ? <XRDomOverlay>{uiContent}</XRDomOverlay> : uiContent
-}
-
 export default function ARMeasurement({ lead, onClose, addNotification }: any) {
     const [points, setPoints] = useState<THREE.Vector3[]>([])
     const [isSaving, setIsSaving] = useState(false)
+    const [isPresenting, setIsPresenting] = useState(false)
 
     const distance = useMemo(() => {
         if (points.length === 2) {
@@ -221,6 +141,18 @@ export default function ARMeasurement({ lead, onClose, addNotification }: any) {
         }
         return 0
     }, [points])
+
+    // Monitorear el estado de la sesión AR
+    useEffect(() => {
+        const checkSession = () => {
+            setIsPresenting(navigator.xr ? true : false) // Simplificado, mejor usar store state
+        }
+        // En v6 el store tiene un estado observable
+        const unsub = store.subscribe((state) => {
+            setIsPresenting(state.session !== null)
+        })
+        return unsub
+    }, [])
 
     const saveToSupabase = async () => {
         if (points.length < 2) return
@@ -247,30 +179,98 @@ export default function ARMeasurement({ lead, onClose, addNotification }: any) {
     }
 
     return (
-        <div className="fixed inset-0 z-[9999] overflow-hidden bg-transparent">
-            <Canvas
-                shadows
-                gl={{ alpha: true, antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" }}
-                camera={{ position: [0, 2, 5], fov: 45 }}
-                onCreated={({ gl }) => {
-                    gl.setClearColor(0x000000, 0)
-                }}
-            >
-                <XR store={store}>
-                    <ARInterface
-                        points={points}
-                        setPoints={setPoints}
-                        isSaving={isSaving}
-                        saveToSupabase={saveToSupabase}
-                        onClose={onClose}
-                        distance={distance}
-                    />
+        <div className="fixed inset-0 z-[10000] flex flex-col bg-transparent overflow-hidden">
+            {/* ───── CAPA DE UI (DOM REAL) ───── */}
+            <div className={`absolute inset-0 z-[10001] flex flex-col p-6 pointer-events-none transition-all duration-1000 ${isPresenting ? 'bg-transparent' : 'bg-slate-950/90 backdrop-blur-xl'}`}>
+                {/* Cabecera */}
+                <div className="flex justify-between items-start pointer-events-auto">
+                    <button
+                        onClick={onClose}
+                        className="w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all shadow-2xl"
+                    >
+                        <X size={24} />
+                    </button>
 
-                    <ambientLight intensity={1.5} />
-                    <pointLight position={[10, 10, 10]} intensity={2.5} />
-                    <ARSceneProxy points={points} setPoints={setPoints} />
-                </XR>
-            </Canvas>
+                    <div className="bg-black/80 backdrop-blur-2xl border border-primary/40 px-6 py-2 rounded-full shadow-2xl text-center flex flex-col items-center">
+                        <span className="text-[7px] font-black tracking-[3px] text-primary uppercase leading-none mb-1">Métrica Precisa (ARCore)</span>
+                        <span className="text-2xl font-mono font-black text-white italic leading-none">{distance.toFixed(3)}m</span>
+                    </div>
+
+                    <div className="w-12"></div>
+                </div>
+
+                {/* Centro (Instrucciones) */}
+                {!isPresenting && (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 max-w-xs mx-auto">
+                        <div className="w-20 h-20 bg-primary/20 rounded-3xl flex items-center justify-center border border-primary/40 animate-pulse rotate-3">
+                            <Box size={32} className="text-primary" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-xl font-black text-white uppercase tracking-tighter">Levitón <span className="text-primary">Especialista</span></h2>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+                                Presiona el botón para activar el sensor de profundidad y medir muros con precisión milimétrica.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Pie de controles */}
+                <div className="mt-auto flex flex-col items-center gap-6 pointer-events-auto pb-10">
+                    {points.length > 0 && (
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setPoints([])}
+                                className="w-14 h-14 bg-red-600/20 backdrop-blur-md border border-red-500/40 rounded-full flex items-center justify-center text-red-500 active:scale-95 transition-all shadow-xl"
+                            >
+                                <Trash2 size={24} />
+                            </button>
+                            <span className="text-[9px] font-black text-white uppercase tracking-[4px] py-2 px-6 bg-white/5 border border-white/10 rounded-full backdrop-blur-xl">
+                                {points.length === 1 ? 'Punto A Fijado' : 'Segmento Terminado'}
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="flex w-full max-w-sm gap-4">
+                        <button
+                            className={`flex-1 h-20 rounded-[28px] font-black uppercase text-[12px] tracking-[4px] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${isPresenting ? 'bg-primary/20 border-2 border-primary/60 text-primary' : 'bg-primary text-white border-b-8 border-blue-900'}`}
+                            onClick={() => store.enterAR()}
+                        >
+                            <Box size={24} /> {isPresenting ? 'Marcar Punto' : 'Iniciar Escáner Pro'}
+                        </button>
+
+                        {points.length === 2 && (
+                            <button
+                                disabled={isSaving}
+                                onClick={saveToSupabase}
+                                className="w-20 h-20 bg-emerald-500 text-white rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-all border-b-8 border-emerald-900 animate-bounce"
+                            >
+                                <Save size={28} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* ───── CAPA 3D (CÁMARA) ───── */}
+            <div className="absolute inset-0 z-[9998]">
+                <Canvas
+                    shadows
+                    gl={{ alpha: true, antialias: true, preserveDrawingBuffer: true }}
+                    camera={{ position: [0, 2, 5], fov: 45 }}
+                    onCreated={({ gl }) => {
+                        gl.setClearColor(0x000000, 0)
+                    }}
+                >
+                    <XR store={store}>
+                        {/* El DOM Overlay inyecta nuestra UI real en el visor XR */}
+                        <XRDomOverlay />
+
+                        <ambientLight intensity={1.5} />
+                        <pointLight position={[10, 10, 10]} intensity={2.5} />
+                        <ARSceneProxy points={points} setPoints={setPoints} />
+                    </XR>
+                </Canvas>
+            </div>
         </div>
     )
 }
