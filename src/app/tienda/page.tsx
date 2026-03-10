@@ -50,6 +50,7 @@ export default function StorePage() {
             .catch(() => setLoading(false));
     }, []);
 
+    // Filter products based on live Syscom category mapping
     const filteredProducts = products.filter(p => {
         const searchMatch = p.titulo.toLowerCase().includes(search.toLowerCase()) ||
             p.modelo.toLowerCase().includes(search.toLowerCase());
