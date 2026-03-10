@@ -64,7 +64,8 @@ export default function CRMView({ addNotification }: any) {
             .select()
 
         if (error) {
-            addNotification('Error al crear lead', 'error')
+            console.error('Error creating lead:', error)
+            addNotification(`Error: ${error.message}`, 'error')
         } else {
             setLeads([(data[0] as CRMLead), ...leads])
             addNotification(`NUEVO LEAD CREADO: ${clientName.toUpperCase()}`, 'success')
