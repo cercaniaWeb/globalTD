@@ -39,6 +39,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_events: {
+        Row: {
+          category: string | null
+          color: string | null
+          created_at: string | null
+          description: string | null
+          end_time: string
+          id: string
+          start_time: string
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_time: string
+          id?: string
+          start_time: string
+          title: string
+        }
+        Update: {
+          category?: string | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_time?: string
+          id?: string
+          start_time?: string
+          title?: string
+        }
+        Relationships: []
+      }
       clientes_cctv: {
         Row: {
           email_notificaciones: string | null
@@ -131,6 +164,57 @@ export type Database = {
           estimate?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          created_at: string | null
+          id: string
+          subscription: Json
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          subscription: Json
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          subscription?: Json
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string | null
+          reminder_sent: boolean | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          reminder_sent?: boolean | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          reminder_sent?: boolean | null
+          status?: string | null
+          title?: string
         }
         Relationships: []
       }

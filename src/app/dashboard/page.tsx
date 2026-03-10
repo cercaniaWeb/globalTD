@@ -37,6 +37,19 @@ import {
 import Link from 'next/link'
 import Image from 'next/image'
 import { withAuth } from '@/hoc/withAuth'
+import {
+    format,
+    addMonths,
+    subMonths,
+    startOfMonth,
+    endOfMonth,
+    startOfWeek,
+    endOfWeek,
+    isSameMonth,
+    isSameDay,
+    addDays,
+    eachDayOfInterval
+} from 'date-fns'
 
 // ─── Tipos y Mocks Extendidos ──────────────────────────────────
 
@@ -109,6 +122,43 @@ function OperationsDashboard() {
         setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 5000)
     }
 
+    useEffect(() => {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(() => {
+                console.log('Service Worker Registered')
+            })
+        }
+
+        // Permitir notificaciones si se solicitan
+        if (Notification.permission === 'default') {
+            Notification.requestPermission()
+        }
+
+        // Lógica de Recordatorios (Simulación de Push/Reminders locales)
+        const checkReminders = async () => {
+            const today = new Date().toISOString()
+            const { data: dueTasks } = await supabase
+                .from('tasks')
+                .select('*')
+                .eq('status', 'pendiente')
+                .eq('reminder_sent', false)
+                .lte('due_date', today)
+
+            if (dueTasks && dueTasks.length > 0) {
+                dueTasks.forEach(async (task) => {
+                    new Notification('Recordatorio de Tarea', {
+                        body: `La tarea "${task.title}" vence hoy.`,
+                        icon: '/logo.png'
+                    })
+                    await supabase.from('tasks').update({ reminder_sent: true }).eq('id', task.id)
+                })
+            }
+        }
+
+        const interval = setInterval(checkReminders, 60000)
+        return () => clearInterval(interval)
+    }, [])
+
     const handleCreateOrder = (orderData: any) => {
         const nextFolio = recentOrders.length > 0
             ? parseInt(recentOrders[0].id.split('-')[1]) + 1
@@ -152,6 +202,7 @@ function OperationsDashboard() {
                     <SidebarItem icon={<Hammer size={18} />} label="Equipo Técnico" active={activeTab === 'equipo'} onClick={() => setActiveTab('equipo')} />
                     <SidebarItem icon={<Key size={18} />} label="Accesos" active={activeTab === 'accesos'} onClick={() => setActiveTab('accesos')} />
                     <SidebarItem icon={<Calendar size={18} />} label="Calendario" active={activeTab === 'calendario'} onClick={() => setActiveTab('calendario')} />
+                    <SidebarItem icon={<ClipboardList size={18} />} label="Tareas" active={activeTab === 'tareas'} onClick={() => setActiveTab('tareas')} />
                 </nav>
 
                 <div className="pt-8 border-t border-white/5 space-y-4 text-slate-500">
@@ -214,7 +265,8 @@ function OperationsDashboard() {
                     }} />}
                     {activeTab === 'equipo' && <EquipoView orders={recentOrders} />}
                     {activeTab === 'accesos' && <AccesosView />}
-                    {activeTab === 'calendario' && <div className="p-20 text-center italic text-slate-700 uppercase tracking-widest text-[10px]">Módulo de Agenda en Sincronización Cloud</div>}
+                    {activeTab === 'calendario' && <CalendarView />}
+                    {activeTab === 'tareas' && <TasksView />}
                 </div>
             </main>
 
@@ -889,3 +941,246 @@ function CameraCell({ id, label, bitrate, image }: { id: string, label: string, 
 }
 
 export default withAuth(OperationsDashboard)
+
+
+function TasksView() {
+    const [tasks, setTasks] = useState<any[]>([])
+    const [newTask, setNewTask] = useState({ title: '', priority: 'media', due_date: '' })
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        fetchTasks()
+    }, [])
+
+    const fetchTasks = async () => {
+        const { data } = await supabase.from('tasks').select('*').order('due_date', { ascending: true })
+        if (data) setTasks(data)
+        setLoading(false)
+    }
+
+    const handleAddTask = async (e: any) => {
+        e.preventDefault()
+        if (!newTask.title) return
+        const { data, error } = await supabase.from('tasks').insert([{
+            title: newTask.title,
+            priority: newTask.priority,
+            due_date: newTask.due_date || new Date().toISOString(),
+            status: 'pendiente'
+        }]).select()
+
+        if (data) {
+            setTasks([data[0], ...tasks])
+            setNewTask({ title: '', priority: 'media', due_date: '' })
+            // Notification if valid
+            if (Notification.permission === 'granted') {
+                new Notification('Tarea Creada', { body: `Has añadido: ${newTask.title}` })
+            }
+        }
+    }
+
+    const toggleTask = async (task: any) => {
+        const newStatus = task.status === 'completada' ? 'pendiente' : 'completada'
+        const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', task.id)
+        if (!error) {
+            setTasks(tasks.map(t => t.id === task.id ? { ...t, status: newStatus } : t))
+        }
+    }
+
+    return (
+        <div className="space-y-10 animate-in fade-in duration-500">
+            <header className="flex justify-between items-end">
+                <div className="space-y-2">
+                    <h2 className="text-3xl font-black italic uppercase tracking-tighter">Gestión de <span className="text-primary italic underline underline-offset-8">Tareas</span></h2>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Lista de pendientes tácticos y recordatorios operativos.</p>
+                </div>
+                <form onSubmit={handleAddTask} className="flex gap-3">
+                    <input
+                        type="text"
+                        value={newTask.title}
+                        onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+                        placeholder="NUEVA TAREA..."
+                        className="bg-slate-900 border border-white/5 rounded-xl px-6 py-3 text-[10px] font-black uppercase tracking-widest focus:border-primary focus:outline-none w-64"
+                    />
+                    <input
+                        type="datetime-local"
+                        value={newTask.due_date}
+                        onChange={e => setNewTask({ ...newTask, due_date: e.target.value })}
+                        className="bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-[10px] font-black uppercase text-slate-400 focus:border-primary focus:outline-none"
+                    />
+                    <select
+                        value={newTask.priority}
+                        onChange={e => setNewTask({ ...newTask, priority: e.target.value })}
+                        className="bg-slate-900 border border-white/5 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest focus:border-primary focus:outline-none"
+                    >
+                        <option value="baja">Baja</option>
+                        <option value="media">Media</option>
+                        <option value="alta">Alta</option>
+                    </select>
+                    <button type="submit" className="bg-primary px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-glow">Agregar</button>
+                </form>
+            </header>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {['pendiente', 'en_proceso', 'completada'].map(status => (
+                    <div key={status} className="glass rounded-[32px] border-white/5 p-8 space-y-6">
+                        <h3 className="text-[10px] font-black uppercase tracking-[4px] text-slate-500 flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full ${status === 'pendiente' ? 'bg-yellow-500' : status === 'en_proceso' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                            {status.replace('_', ' ')}
+                        </h3>
+                        <div className="space-y-4">
+                            {tasks.filter(t => t.status === status).map(task => (
+                                <div key={task.id}
+                                    onClick={() => toggleTask(task)}
+                                    className="p-5 glass border-white/5 rounded-2xl hover:border-primary/30 transition-all cursor-pointer group">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <p className={`text-[11px] font-black uppercase tracking-tight ${task.status === 'completada' ? 'line-through text-slate-600' : 'text-white'}`}>{task.title}</p>
+                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${task.priority === 'alta' ? 'bg-red-500/10 text-red-500' : 'bg-slate-500/10 text-slate-500'}`}>{task.priority}</span>
+                                    </div>
+                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                                        Vence: {task.due_date ? new Date(task.due_date).toLocaleString() : 'Sin fecha'}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function CalendarView() {
+    const [currentMonth, setCurrentMonth] = useState(new Date())
+    const [events, setEvents] = useState<any[]>([])
+    const [showEventModal, setShowEventModal] = useState(false)
+    const [selectedDate, setSelectedDate] = useState(new Date())
+
+    useEffect(() => {
+        fetchEvents()
+        if (Notification.permission === 'default') {
+            Notification.requestPermission()
+        }
+    }, [])
+
+    const fetchEvents = async () => {
+        const { data } = await supabase.from('calendar_events').select('*')
+        if (data) setEvents(data)
+    }
+
+    const renderHeader = () => {
+        const dateFormat = "MMMM yyyy"
+        return (
+            <div className="flex items-center justify-between mb-10">
+                <div className="space-y-2">
+                    <h2 className="text-3xl font-black italic uppercase tracking-tighter">Calendario <span className="text-primary italic underline underline-offset-8">Operativo</span></h2>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Sincronización de eventos y despliegues en tiempo real.</p>
+                </div>
+                <div className="flex items-center gap-6">
+                    <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-3 bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all">Anterior</button>
+                    <span className="text-sm font-black uppercase tracking-[3px] italic">{format(currentMonth, dateFormat).toUpperCase()}</span>
+                    <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-3 bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all">Siguiente</button>
+                </div>
+            </div>
+        )
+    }
+
+    const renderDays = () => {
+        const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
+        return (
+            <div className="grid grid-cols-7 mb-4">
+                {days.map(day => (
+                    <div key={day} className="text-[10px] font-black uppercase tracking-[4px] text-slate-500 text-center">{day}</div>
+                ))}
+            </div>
+        )
+    }
+
+    const renderCells = () => {
+        const monthStart = startOfMonth(currentMonth)
+        const monthEnd = endOfMonth(monthStart)
+        const startDate = startOfWeek(monthStart)
+        const endDate = endOfWeek(monthEnd)
+
+        const rows = []
+        let days = []
+        let day = startDate
+        let formattedDate = ""
+
+        while (day <= endDate) {
+            for (let i = 0; i < 7; i++) {
+                formattedDate = format(day, "d")
+                const cloneDay = day
+                const dayEvents = events.filter(e => isSameDay(new Date(e.start_time), cloneDay))
+
+                days.push(
+                    <div
+                        key={day.toString()}
+                        className={`h-40 glass border border-white/5 p-4 transition-all hover:bg-white/[0.02] cursor-pointer ${!isSameMonth(day, monthStart) ? "opacity-20" : ""
+                            } ${isSameDay(day, new Date()) ? "border-primary shadow-glow" : ""}`}
+                        onClick={() => {
+                            setSelectedDate(cloneDay)
+                            setShowEventModal(true)
+                        }}
+                    >
+                        <span className="text-[10px] font-black text-slate-500 mb-4 block">{formattedDate}</span>
+                        <div className="space-y-1 overflow-y-auto max-h-24 custom-scrollbar">
+                            {dayEvents.map(event => (
+                                <div key={event.id} className={`text-[8px] font-black uppercase p-1.5 rounded bg-${event.color}-500/10 text-${event.color}-500 border border-${event.color}-500/20 truncate`}>
+                                    {event.title}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )
+                day = addDays(day, 1)
+            }
+            rows.push(
+                <div className="grid grid-cols-7" key={day.toString()}>
+                    {days}
+                </div>
+            )
+            days = []
+        }
+        return <div className="rounded-[40px] overflow-hidden border border-white/5">{rows}</div>
+    }
+
+    return (
+        <div className="animate-in fade-in duration-500">
+            {renderHeader()}
+            {renderDays()}
+            {renderCells()}
+            {showEventModal && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-xl">
+                    <div className="glass w-full max-w-md rounded-[32px] border-white/5 p-10 space-y-8 animate-in zoom-in duration-300">
+                        <h3 className="text-xl font-black uppercase italic tracking-widest text-primary">Agendar Evento</h3>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Fecha: {selectedDate.toLocaleDateString()}</p>
+                        <div className="space-y-6">
+                            <input id="ev-title" type="text" placeholder="TITULO DEL EVENTO..." className="w-full bg-slate-900 border border-white/5 rounded-xl px-6 py-4 text-xs font-bold uppercase tracking-widest focus:border-primary focus:outline-none" />
+                            <div className="flex gap-4">
+                                <button onClick={async () => {
+                                    const title = (document.getElementById('ev-title') as HTMLInputElement).value
+                                    if (!title) return
+                                    const { data } = await supabase.from('calendar_events').insert([{
+                                        title,
+                                        start_time: selectedDate.toISOString(),
+                                        end_time: selectedDate.toISOString(),
+                                        category: 'reunion',
+                                        color: 'blue'
+                                    }]).select()
+                                    if (data) {
+                                        setEvents([...events, data[0]])
+                                        setShowEventModal(false)
+                                        if (Notification.permission === 'granted') {
+                                            new Notification('Evento Agendado', { body: `Evento: ${title}` })
+                                        }
+                                    }
+                                }} className="flex-1 bg-primary py-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-glow">Guardar</button>
+                                <button onClick={() => setShowEventModal(false)} className="flex-1 bg-white/5 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
