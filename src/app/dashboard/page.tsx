@@ -114,12 +114,16 @@ function OperationsDashboard() {
             instructions: ['Puntos ciegos lobby', 'Cotizar biométrico']
         },
     ])
-    const [notifications, setNotifications] = useState<{ id: string; msg: string; type: string }[]>([])
+    const [notifications, setNotifications] = useState<{ id: string; msg: string; type: string, read: boolean, date: Date }[]>([])
+    const [toasts, setToasts] = useState<{ id: string; msg: string; type: string }[]>([])
+    const [showNotifPanel, setShowNotifPanel] = useState(false)
 
     const addNotification = (msg: string, type = 'info') => {
         const id = Math.random().toString(36).substr(2, 9)
-        setNotifications(prev => [{ id, msg, type }, ...prev])
-        setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 5000)
+        const newNotif = { id, msg, type, read: false, date: new Date() }
+        setNotifications(prev => [newNotif, ...prev])
+        setToasts(prev => [{ id, msg, type }, ...prev])
+        setTimeout(() => setToasts(prev => prev.filter(n => n.id !== id)), 5000)
     }
 
     useEffect(() => {
@@ -238,16 +242,64 @@ function OperationsDashboard() {
                                 <Plus size={14} /> Nueva Orden
                             </button>
                         )}
-                        <button className="p-3 glass rounded-xl border-white/5 relative hover:bg-white/10 transition-all">
-                            <Bell className="w-5 h-5 text-slate-400" />
-                            {notifications.length > 0 && <div className="absolute top-3.5 right-3.5 w-1.5 h-1.5 bg-primary rounded-full shadow-glow animate-pulse"></div>}
-                        </button>
+                        <div className="relative">
+                            <button
+                                onClick={() => {
+                                    setShowNotifPanel(!showNotifPanel)
+                                    if (!showNotifPanel) {
+                                        setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+                                    }
+                                }}
+                                className="p-3 glass rounded-xl border-white/5 relative hover:bg-white/10 transition-all"
+                            >
+                                <Bell className={`w-5 h-5 ${notifications.some(n => !n.read) ? 'text-primary animate-ring' : 'text-slate-400'}`} />
+                                {notifications.some(n => !n.read) && <div className="absolute top-3.5 right-3.5 w-1.5 h-1.5 bg-primary rounded-full shadow-glow animate-pulse"></div>}
+                            </button>
+
+                            {showNotifPanel && (
+                                <div className="absolute top-16 right-0 w-80 glass border border-white/10 rounded-[32px] shadow-2xl p-6 z-[60] animate-in slide-in-from-top-2 duration-300">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-[10px] font-black uppercase tracking-[3px] text-white">Notificaciones</h3>
+                                        <button
+                                            onClick={() => setNotifications([])}
+                                            className="text-[8px] font-black uppercase text-slate-500 hover:text-primary transition-colors"
+                                        >Limpiar Todo</button>
+                                    </div>
+                                    <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                                        {notifications.length === 0 ? (
+                                            <div className="py-10 text-center space-y-4">
+                                                <Zap size={24} className="mx-auto text-slate-800" />
+                                                <p className="text-[9px] font-black uppercase text-slate-700 tracking-widest leading-relaxed">Sin actividad reciente en el perímetro</p>
+                                            </div>
+                                        ) : (
+                                            notifications.map(n => (
+                                                <div key={n.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2 group hover:border-primary/20 transition-all">
+                                                    <div className="flex justify-between items-start">
+                                                        <p className="text-[10px] font-black uppercase tracking-tight text-slate-200">{n.msg}</p>
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${n.type === 'success' ? 'bg-green-500' : 'bg-primary'}`}></div>
+                                                    </div>
+                                                    <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">{n.date.toLocaleTimeString()}</p>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                    <div className="mt-6 pt-4 border-t border-white/5">
+                                        <button
+                                            onClick={() => Notification.requestPermission()}
+                                            className="w-full py-3 bg-white/5 rounded-xl text-[8px] font-black uppercase tracking-[2px] text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <Shield size={10} /> Forzar Permisos Push
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </header>
 
                 {/* Notifications Toast Overlay */}
                 <div className="fixed top-24 right-12 z-50 space-y-4">
-                    {notifications.map(n => (
+                    {toasts.map(n => (
                         <div key={n.id} className="glass border-primary/20 bg-primary/10 p-5 rounded-2xl shadow-2xl animate-in slide-in-from-right duration-300 flex items-center gap-4 border-l-4">
                             <Zap size={18} className="text-primary" />
                             <p className="text-[11px] font-black uppercase tracking-widest text-white">{n.msg}</p>
