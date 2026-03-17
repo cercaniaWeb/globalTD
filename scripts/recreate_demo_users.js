@@ -17,9 +17,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function setupDemoUsers() {
   const usersToCreate = [
-    { email: 'admin@coresystems.security', password: 'password123', name: 'Admin Global', role: 'admin' },
-    { email: 'cliente@coresystems.security', password: 'password123', name: 'Cliente VIP', role: 'client' },
-    { email: 'tech@coresystems.security', password: 'password123', name: 'Ingeniero Instalador', role: 'tech' }
+    { email: 'admin@globaltelecomunicaciones.mx', password: 'password123', name: 'Admin Global', role: 'admin' },
+    { email: 'cliente@globaltelecomunicaciones.mx', password: 'password123', name: 'Cliente VIP', role: 'client' },
+    { email: 'tech@globaltelecomunicaciones.mx', password: 'password123', name: 'Ingeniero Instalador', role: 'tech' }
   ];
 
   for (const user of usersToCreate) {
