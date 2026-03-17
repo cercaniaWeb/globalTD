@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import type { WorkOrder } from '@/app/dashboard/page'
 import { Filter, MapPin } from 'lucide-react'
 import FirmaModal from './FirmaModal'
 
-export default function OrdenesView({ orders, onFinishOrder, addNotification }: any) {
-    const [orderToSign, setOrderToSign] = useState<any>(null)
+export default function OrdenesView({ orders, onFinishOrder, addNotification }: { orders: WorkOrder[], onFinishOrder: (id: string) => void, addNotification: (message: string, type: string) => void }) {
+    const [orderToSign, setOrderToSign] = useState<WorkOrder | null>(null)
 
     return (
         <div className="space-y-10 animate-in slide-in-from-bottom-4 duration-500 pb-20">
@@ -38,7 +39,7 @@ export default function OrdenesView({ orders, onFinishOrder, addNotification }: 
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {orders.map((o: any) => (
+                            {orders.map((o: WorkOrder) => (
                                 <tr key={o.id} className="hover:bg-white/[0.02] transition-colors group">
                                     <td className="px-10 py-8">
                                         <div className="flex items-center gap-3">

@@ -2,161 +2,261 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Shield, ShieldCheck, Cpu, Headphones, ArrowRight, Menu, CheckCircle2 } from "lucide-react";
-import SmartConfigurator from "@/components/SmartConfigurator";
+import { Cpu, ArrowRight, Camera, Shield, Globe, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
+
+const SmartConfigurator = dynamic(() => import("@/components/SmartConfigurator"), {
+  loading: () => (
+    <div className="h-[800px] w-full flex flex-col items-center justify-center space-y-4 bg-slate-950/50 backdrop-blur-xl border border-white/5 rounded-3xl animate-pulse my-20">
+      <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+        <Cpu className="w-6 h-6 text-primary animate-spin-slow" />
+      </div>
+      <p className="text-[10px] font-black uppercase tracking-[5px] text-primary">Inicializando Configurador...</p>
+    </div>
+  ),
+  ssr: false
+});
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background bg-grid selection:bg-primary/30 text-slate-100">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 glass border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3" aria-label="Global Telecom Home">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/30">
-              <Shield className="text-white w-6 h-6" aria-hidden="true" />
+    <main className="min-h-screen bg-background bg-grid selection:bg-primary/30 text-slate-100">
+      <article>
+        {/* Hero Section */}
+        <section className="relative pt-48 pb-32 px-6 overflow-hidden min-h-screen flex items-center">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle_at_center,rgba(197,160,89,0.05)_0%,transparent_70%)] pointer-events-none z-0"></div>
+          <div className="absolute bottom-0 left-0 w-1/2 h-full bg-[radial-gradient(circle_at_center,rgba(30,41,59,0.1)_0%,transparent_70%)] pointer-events-none z-0"></div>
+
+          <div className="max-w-7xl mx-auto relative z-30 w-full">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-32 items-center">
+              <motion.div 
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                className="space-y-10 relative z-40 max-w-2xl"
+              >
+                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 text-primary text-[9px] font-black uppercase tracking-[4px] drop-shadow-glow">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div> Partner Certificado Hikvision & Syscom
+                </div>
+
+                <h1 className="text-4xl md:text-6xl lg:text-[5.5rem] font-black uppercase tracking-tighter leading-[0.95] italic text-white drop-shadow-3xl">
+                  Ingeniería de <br /> <span className="text-primary text-shadow-glow">CCTV</span> <br /> Institucional
+                </h1>
+
+                <p className="text-lg md:text-xl text-slate-300 max-w-xl font-medium leading-relaxed uppercase tracking-wider drop-shadow-lg">
+                  Desplegamos infraestructura de videovigilancia de alta integridad con estándar industrial para empresas y residencias de alto valor.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-6 pt-4">
+                  <Link href="#configurador" className="btn-primary group py-6 px-12 text-xs shadow-2xl shadow-primary/20 hover:scale-105 transition-transform flex items-center justify-center gap-2">
+                    Diseñar Mi Sistema <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                  </Link>
+                  <Link href="/tienda" className="px-12 py-6 glass rounded-[22px] border border-white/10 text-xs font-black uppercase tracking-[4px] hover:bg-white/10 transition-all text-center">Catálogo Técnico</Link>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-10 pt-16 border-t border-white/10">
+                  <div className="space-y-2">
+                    <p className="text-4xl font-black italic text-white">10+</p>
+                    <p className="text-[9px] uppercase font-black tracking-[3px] text-primary/70">Años de Expertise</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-4xl font-black italic text-white">500+</p>
+                    <p className="text-[9px] uppercase font-black tracking-[3px] text-primary/70">Sistemas Instalados</p>
+                  </div>
+                  <div className="hidden sm:block space-y-2">
+                    <p className="text-4xl font-black italic text-white">24/7</p>
+                    <p className="text-[9px] uppercase font-black tracking-[3px] text-primary/70">SOC Operativo</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1 }}
+                className="relative group p-4 sm:p-20 underline-offset-8"
+              >
+                <div className="relative rounded-[56px] overflow-hidden border border-white/10 aspect-square shadow-4xl z-10">
+                   <Image 
+                      src="/hero-cctv.png" 
+                      alt="Sistema de CCTV Profesional - Global Telecomunicaciones Digitales" 
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover transition-all group-hover:scale-110 duration-1000 grayscale-[0.2] group-hover:grayscale-0"
+                      priority
+                   />
+                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
+                </div>
+                
+                <div className="absolute -bottom-8 -right-4 md:-right-8 w-full max-w-[320px] p-8 glass-premium backdrop-blur-[40px] rounded-3xl border border-primary/30 shadow-4xl flex items-center gap-6 group-hover:translate-y-[-10px] transition-all duration-700 z-30">
+                  <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/30 shadow-inner">
+                    <CheckCircle2 className="text-primary w-8 h-8 animate-pulse" aria-hidden="true" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-black uppercase tracking-widest text-white text-sm">Empresa Verificada</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <p className="text-[9px] font-bold text-slate-200 uppercase tracking-widest">Hikvision Pro Partner</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-            <span className="text-xl font-black uppercase tracking-tighter italic">
-              Global <span className="text-primary">Telecom</span>
-            </span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-10 text-slate-400">
-            <Link href="#servicios" className="text-[10px] font-black uppercase tracking-[3px] hover:text-white transition-colors">Servicios</Link>
-            <Link href="#soluciones" className="text-[10px] font-black uppercase tracking-[3px] hover:text-white transition-colors">Soluciones</Link>
-            <Link href="/tienda" className="text-[10px] font-black uppercase tracking-[3px] hover:text-white transition-colors">Catálogo Pro</Link>
-            <Link href="/login" className="px-6 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-[3px] hover:bg-blue-600 transition-all shadow-lg shadow-blue-900/40">Acceso Sistema</Link>
           </div>
+        </section>
 
-          <button className="md:hidden p-2 text-white" aria-label="Abrir Menú">
-            <Menu className="w-6 h-6" aria-hidden="true" />
-          </button>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="relative pt-48 pb-32 px-6 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12)_0%,transparent_75%)] pointer-events-none"></div>
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
-            <div className="space-y-10">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-[9px] font-black uppercase tracking-[3px]">
-                <ShieldCheck className="w-4 h-4" /> Partner Certificado Hikvision & Syscom
+        {/* Services Section */}
+        <section id="servicios" className="py-32 px-6 bg-background relative border-t border-white/5 overflow-hidden">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-20 text-balance">
+              <div className="max-w-2xl space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[3px]">
+                  Servicios Global Tech
+                </div>
+                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic text-white leading-none">
+                  Ingeniería en <br /><span className="text-primary text-shadow-glow">Seguridad Crítica</span>
+                </h2>
               </div>
-
-              <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9] italic">
-                Seguridad <br /> <span className="text-primary">Estratégica</span> <br /> Digital
-              </h1>
-
-              <p className="text-lg text-slate-400 max-w-xl font-medium leading-relaxed uppercase tracking-wide">
-                Ingeniería avanzada en Videovigilancia, Control de Acceso y Redes. Desplegamos infraestructura de alto rendimiento con respaldo corporativo.
+              <p className="text-slate-400 font-medium max-w-sm uppercase tracking-widest text-[10px] leading-relaxed">
+                Nuestros procesos de ingeniería garantizan que cada pixel cuente y cada acceso esté bajo control total en todo México.
               </p>
-
-              <div className="flex flex-col sm:flex-row gap-6 pt-4">
-                <Link href="#configurador" className="btn-primary group border-none py-6 px-10 text-xs">
-                  Cotizar Proyecto Smart <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-                </Link>
-                <Link href="/tienda" className="px-10 py-6 glass rounded-[22px] border border-white/10 text-xs font-black uppercase tracking-[4px] hover:bg-white/5 transition-all text-center">Ver Catálogo</Link>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-10 pt-16 border-t border-white/5">
-                <div>
-                  <p className="text-4xl font-black italic border-b-4 border-primary inline-block">10+</p>
-                  <p className="text-[9px] uppercase font-black tracking-[3px] text-slate-500 mt-4">Años de Expertis</p>
-                </div>
-                <div>
-                  <p className="text-4xl font-black italic border-b-4 border-primary inline-block">500+</p>
-                  <p className="text-[9px] uppercase font-black tracking-[3px] text-slate-500 mt-4">Nodos Listos</p>
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-4xl font-black italic border-b-4 border-primary inline-block">24/7</p>
-                  <p className="text-[9px] uppercase font-black tracking-[3px] text-slate-500 mt-4">SOC Operativo</p>
-                </div>
-              </div>
             </div>
 
-            <div className="relative">
-              <div className="absolute -inset-10 bg-primary/10 blur-[120px] rounded-full opacity-50 animate-pulse"></div>
-              <div className="relative glass rounded-[56px] overflow-hidden border border-white/5 aspect-square lg:aspect-video flex items-center justify-center shadow-3xl">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-transparent"></div>
-                <Shield className="w-56 h-56 text-primary/5 animate-in zoom-in duration-1000" />
-                <div className="absolute bottom-10 left-10 right-10 p-8 glass backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl flex items-center gap-8 group hover:scale-[1.02] transition-transform">
-                  <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center border border-green-500/20">
-                    <CheckCircle2 className="text-green-500 w-8 h-8" aria-hidden="true" />
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  title: "Video Inteligente",
+                  desc: "CCTV con analíticas de IA para detección de intrusos y reconocimiento facial.",
+                  icon: <Camera className="w-10 h-10" />,
+                  image: "/service-cctv.png"
+                },
+                {
+                  title: "Acceso Biométrico",
+                  desc: "Control de personal y visitas mediante reconocimiento facial y dactilar.",
+                  icon: <Shield className="w-10 h-10" />,
+                  image: "/service-access.png"
+                },
+                {
+                  title: "Conectividad Pro",
+                  desc: "Redes de fibra óptica e infraestructura inalámbrica industrial.",
+                  icon: <Globe className="w-10 h-10" />,
+                  image: "/service-network.png"
+                }
+              ].map((service, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.2 }}
+                  className="group relative overflow-hidden rounded-[40px] border border-white/5 bg-slate-900/50 hover:bg-slate-900 transition-all duration-700"
+                >
+                  <div className="aspect-[4/3] relative overflow-hidden">
+                    <Image src={service.image} alt={service.title} fill className="object-cover opacity-40 group-hover:opacity-60 group-hover:scale-110 transition-all duration-1000 grayscale group-hover:grayscale-0" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
                   </div>
-                  <div>
-                    <p className="font-black uppercase tracking-widest text-slate-200">Terminal Verificada</p>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Conexión Segura vía Global Cloud</p>
+                  <div className="p-10 space-y-4 relative -mt-10">
+                    <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20 text-primary mb-6 group-hover:scale-110 transition-transform duration-500">
+                      {service.icon}
+                    </div>
+                    <h3 className="text-2xl font-black uppercase tracking-tight text-white italic">{service.title}</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed">{service.desc}</p>
+                    <div className="pt-6">
+                      <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[3px] text-primary group-hover:gap-4 transition-all">
+                        Explorar Ingeniería <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="ml-auto w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Solutions Section */}
+        <section id="soluciones" className="py-32 px-6 bg-slate-950 relative border-t border-white/5">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-20 items-center">
+              <div className="space-y-10 order-2 lg:order-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[3px]">
+                   Verticales de Negocio
                 </div>
+                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic text-white leading-[0.9]">
+                  Soluciones <br /><span className="text-primary text-shadow-glow">Especializadas</span>
+                </h2>
+                
+                <div className="space-y-6">
+                   {[
+                     { title: "Corporativo & Pyme", desc: "Sistemas Centralizados para edificios y locales comerciales." },
+                     { title: "Residencial de Lujo", desc: "Seguridad invisible y conectada para hogares de alta gama." },
+                     { title: "Industria & Almacén", desc: "Control de perímetros y monitoreo de procesos productivos." },
+                     { title: "Educación & Salud", desc: "Entornos seguros con gestión inteligente de usuarios." }
+                   ].map((item, i) => (
+                     <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.15 }}
+                        className="flex gap-6 p-6 rounded-3xl border border-white/5 hover:border-primary/20 hover:bg-white/5 transition-all group cursor-default"
+                     >
+                       <div className="text-primary font-black text-2xl italic opacity-50 group-hover:opacity-100 transition-opacity">0{i+1}</div>
+                       <div className="space-y-1">
+                         <h4 className="text-lg font-black uppercase text-white tracking-widest">{item.title}</h4>
+                         <p className="text-slate-500 text-sm">{item.desc}</p>
+                       </div>
+                     </motion.div>
+                   ))}
+                </div>
+                
+                <div className="pt-6">
+                   <button className="btn-primary py-5 px-10 text-[10px]">
+                      Agendar Consultoría Técnica
+                   </button>
+                </div>
+              </div>
+
+              <div className="relative order-1 lg:order-2">
+                <div className="relative z-10 rounded-[56px] overflow-hidden border border-white/10 aspect-[4/5] shadow-4xl group">
+                   <Image src="/service-cctv.png" alt="Soluciones CCTV" fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-1000" />
+                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+                   <div className="absolute bottom-12 left-12 right-12 p-8 glass-premium rounded-3xl border border-white/10">
+                      <p className="text-primary text-[10px] font-black uppercase tracking-[4px] mb-2">Casos de Éxito</p>
+                      <h4 className="text-2xl font-black text-white uppercase italic tracking-tighter">+1,200 Nodos Instalados</h4>
+                      <p className="text-slate-400 text-xs mt-2 uppercase tracking-widest font-bold">En parques industriales de México</p>
+                   </div>
+                </div>
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 blur-[80px] rounded-full"></div>
+                <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-primary/10 blur-[100px] rounded-full"></div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <div id="configurador" className="relative z-10 scroll-mt-24">
-        <SmartConfigurator />
-      </div>
-
-      {/* Services Section */}
-      <section id="servicios" className="py-32 px-6 bg-black/20">
-        <div className="max-w-7xl mx-auto space-y-24">
-          <div className="text-center space-y-6">
-            <div className="inline-block px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-[4px] text-slate-400">Verticales de Negocio</div>
-            <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tighter italic">Servicios <span className="text-primary italic underline underline-offset-8">Especializados</span></h2>
-            <p className="text-slate-500 max-w-2xl mx-auto font-bold uppercase tracking-widest text-[11px]">Suministro, Ingeniería y Soporte Post-Venta.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            <ServiceCard
-              icon={<Shield className="w-10 h-10" />}
-              title="CCTV & SOC"
-              description="Instalación de cámaras IP de alta resolución con análisis perimetral avanzado y reconocimiento de placas."
-            />
-            <ServiceCard
-              icon={<ShieldCheck className="w-10 h-10" />}
-              title="Identity Control"
-              description="Control de acceso biométrico, facial y vehicular integrado a sistemas administrativos corporativos."
-            />
-            <ServiceCard
-              icon={<Cpu className="w-10 h-10" />}
-              title="Infraestructura"
-              description="Diseño y tendido de redes de fibra óptica, radioenlaces de larga distancia y centros de datos."
-            />
+        <div id="configurador" className="relative z-10 scroll-mt-24 py-20 px-6">
+          <div className="max-w-7xl mx-auto">
+            <SmartConfigurator />
           </div>
         </div>
-      </section>
 
-      {/* Footer Simple */}
-      <footer className="py-20 border-t border-white/5 text-center space-y-6 bg-slate-950">
-        <div className="flex justify-center gap-3 opacity-50 grayscale hover:grayscale-0 transition-all">
-          <div className="w-10 h-10 bg-slate-800 rounded-lg"></div>
-          <div className="w-10 h-10 bg-slate-800 rounded-lg"></div>
-          <div className="w-10 h-10 bg-slate-800 rounded-lg"></div>
-        </div>
-        <p className="text-[10px] font-black uppercase tracking-[5px] text-slate-600">© 2026 Global Telecomunicaciones Digitales S.A. de C.V.</p>
-      </footer>
-    </div>
-  );
-}
-
-function ServiceCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
-  return (
-    <div className="group glass p-12 rounded-[48px] border border-white/5 hover:border-primary/30 transition-all duration-700 hover:shadow-3xl relative overflow-hidden">
-      <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:scale-125 transition-transform duration-1000 text-white">
-        {icon}
-      </div>
-      <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mb-10 group-hover:bg-primary transition-all duration-500 text-slate-400 group-hover:text-white shadow-inner">
-        {icon}
-      </div>
-      <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-6 text-white group-hover:text-primary transition-colors">{title}</h3>
-      <p className="text-slate-500 font-medium leading-relaxed uppercase text-[11px] tracking-widest">{description}</p>
-
-      <div className="mt-10 pt-8 border-t border-white/5 flex items-center text-[9px] font-black uppercase tracking-[3px] text-primary opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all">
-        Saber Más <ArrowRight size={12} className="ml-2" />
-      </div>
-    </div>
+        {/* Footer */}
+        <footer className="py-20 px-6 bg-black border-t border-white/5">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
+            <div className="flex items-center gap-4 opacity-70 grayscale hover:grayscale-0 transition-all">
+              <Image src="/logo-global.png" alt="Global Tech Logo" width={50} height={50} />
+              <div className="flex flex-col">
+                <span className="text-xl font-black uppercase text-white leading-none">Global <span className="text-primary">Telecomunicaciones</span></span>
+                <span className="text-[7px] font-bold text-slate-500 tracking-[3px] mt-1 uppercase">Digitales México</span>
+              </div>
+            </div>
+            <p className="text-slate-600 text-[9px] font-bold uppercase tracking-[4px]">© 2026 Global Telecomunicaciones Digitales. Expertos en Seguridad.</p>
+            <div className="flex gap-8">
+              <Link href="#" className="text-slate-500 hover:text-white transition-colors text-[9px] font-black uppercase tracking-[2px]">Aviso de Privacidad</Link>
+              <Link href="#" className="text-slate-500 hover:text-white transition-colors text-[9px] font-black uppercase tracking-[2px]">Términos Legales</Link>
+            </div>
+          </div>
+        </footer>
+      </article>
+    </main>
   );
 }

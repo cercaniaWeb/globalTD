@@ -1,12 +1,13 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import type { WorkOrder } from '@/app/dashboard/page'
 import SignatureCanvas from 'react-signature-canvas'
 import { X, CheckCircle, ShieldCheck, PenTool } from 'lucide-react'
 import jsPDF from 'jspdf'
 
-export default function FirmaModal({ order, onClose, onConfirm, addNotification }: any) {
-    const sigCanvas = useRef<any>(null)
+export default function FirmaModal({ order, onClose, onConfirm, addNotification }: { order: WorkOrder, onClose: () => void, onConfirm: (signatureImage: string) => void, addNotification: (message: string, type: string) => void }) {
+    const sigCanvas = useRef<SignatureCanvas | null>(null)
     const [isSaving, setIsSaving] = useState(false)
 
     const clearSignature = () => {
@@ -14,7 +15,8 @@ export default function FirmaModal({ order, onClose, onConfirm, addNotification 
     }
 
     const handleSave = async () => {
-        if (sigCanvas.current?.isEmpty()) {
+        if (!sigCanvas.current) return
+        if (sigCanvas.current.isEmpty()) {
             addNotification('La firma es requerida para cerrar la orden', 'error')
             return
         }
@@ -24,9 +26,11 @@ export default function FirmaModal({ order, onClose, onConfirm, addNotification 
 
         // Aquí generaríamos el PDF de Cierre de Servicio
         const doc = new jsPDF()
+        // HEADER BRANDING
+        doc.setFont('helvetica', 'bold')
         doc.setFontSize(22)
-        doc.setTextColor(37, 99, 235)
-        doc.text('Global Telecom', 14, 20)
+        doc.setTextColor(27, 38, 59) // Oxford Blue
+        doc.text('Global Telecomunicaciones Digitales', 14, 20)
 
         doc.setFontSize(14)
         doc.setTextColor(0)
@@ -46,8 +50,10 @@ export default function FirmaModal({ order, onClose, onConfirm, addNotification 
 
         // Inject Signature
         doc.addImage(signatureImage, 'PNG', 14, 120, 80, 40)
-        doc.line(14, 160, 94, 160) // Linea de firma
-        doc.text('Firma del Cliente', 35, 165)
+        doc.setDrawColor(197, 160, 89)
+        doc.line(14, 160, 94, 160) // Linea de firma Gold
+        doc.setFontSize(9)
+        doc.text('Firma del Cliente - Grado de Conformidad', 14, 165)
 
         doc.save(`Cierre_${order.id}_${order.client.replace(' ', '')}.pdf`)
 
@@ -103,9 +109,9 @@ export default function FirmaModal({ order, onClose, onConfirm, addNotification 
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="flex-[2] py-4 bg-primary hover:bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] tracking-[3px] transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
+                            className="flex-[2] py-4 bg-primary hover:bg-[#B38F4D] text-[#0F172A] rounded-xl font-black uppercase text-[10px] tracking-[3px] transition-all shadow-xl shadow-amber-900/20 flex items-center justify-center gap-2"
                         >
-                            <CheckCircle size={16} /> {isSaving ? 'Certificando...' : 'Sellar Orden'}
+                            <CheckCircle size={16} /> {isSaving ? 'Certificando...' : 'Sellar Ingeniería'}
                         </button>
                     </div>
                 </div>

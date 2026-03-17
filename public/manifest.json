@@ -1,6 +1,6 @@
 {
-    "name": "Global Telecom Operations",
-    "short_name": "Global Ops",
+    "name": "Global Telecomunicaciones Digitales",
+    "short_name": "Global Tec",
     "description": "Sistema avanzado de gestión de cuadrillas y reselling CCTV.",
     "start_url": "/dashboard",
     "display": "standalone",

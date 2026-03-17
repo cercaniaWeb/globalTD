@@ -1,9 +1,11 @@
 'use client'
 
-import { Briefcase, ClipboardList, MapPin, TrendingUp, Users, Zap, Activity } from 'lucide-react'
+import React from 'react'
+import { Briefcase, ClipboardList, MapPin, TrendingUp, Users, Zap } from 'lucide-react'
 import { StatCard, TeamStat } from './SharedComponents'
+import type { WorkOrder, Client, Branch } from '@/app/dashboard/page'
 
-export default function ResumenView({ orders, onMonitor, MOCK_CLIENTS }: any) {
+export default function ResumenView({ setActiveTab, orders, onMonitor, MOCK_CLIENTS }: { setActiveTab: React.Dispatch<React.SetStateAction<string>>, orders: WorkOrder[], onMonitor: (data: { client: string, branch: { name: string } }) => void, MOCK_CLIENTS: Client[] }) {
     return (
         <div className="space-y-12 animate-in fade-in duration-500 pb-20">
             <header>
@@ -12,20 +14,20 @@ export default function ResumenView({ orders, onMonitor, MOCK_CLIENTS }: any) {
             </header>
 
             <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                <StatCard label="Tickets Activos" value={orders.length} icon={<ClipboardList className="text-blue-500" />} trend="Monitoreado" />
-                <StatCard label="Ingenieros Campo" value="4" icon={<Users className="text-yellow-500" />} trend="Full capacity" />
-                <StatCard label="Sucursales" value="15" icon={<MapPin className="text-green-500" />} trend="Geolocalizadas" />
-                <StatCard label="Meta Semanal" value="85%" icon={<TrendingUp className="text-purple-500" />} trend="En rango" />
+                <StatCard label="Tickets Activos" value={orders.length} icon={<ClipboardList className="text-primary" />} trend="Monitoreado" />
+                <StatCard label="Ingenieros Campo" value="4" icon={<Users className="text-primary" />} trend="Full capacity" />
+                <StatCard label="Sucursales" value="15" icon={<MapPin className="text-primary" />} trend="Geolocalizadas" />
+                <StatCard label="Meta Semanal" value="85%" icon={<TrendingUp className="text-primary" />} trend="En rango" />
             </section>
 
             {/* POWER UP: Squad Live Mapping Simulation */}
             <div
                 id="squad-map-container"
-                className="glass rounded-[40px] border border-white/10 p-1 relative overflow-hidden h-[500px] group mb-10 shadow-2xl shadow-blue-900/30 bg-slate-950"
+                className="glass rounded-[40px] border border-white/10 p-1 relative overflow-hidden h-[500px] group mb-10 shadow-2xl shadow-amber-900/20 bg-slate-950"
             >
                 {/* Background Map Simulation */}
                 <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.1),transparent_80%)]"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(197,160,89,0.1),transparent_80%)]"></div>
 
                 {/* Simulated Map Lines */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>
@@ -43,10 +45,10 @@ export default function ResumenView({ orders, onMonitor, MOCK_CLIENTS }: any) {
                         <span className="text-[12px] font-black uppercase tracking-[4px] text-white">Squad Telemetry</span>
                     </div>
                     <div className="space-y-4">
-                        <TelemetryRow label="🛰️ Satellites" value="09 Active" color="text-green-400" />
-                        <TelemetryRow label="👥 Personnel" value="12 On-Duty" color="text-primary" />
-                        <TelemetryRow label="⏱️ Active Tickets" value={orders.length} color="text-blue-400" />
-                        <TelemetryRow label="🛡️ Global Status" value="Secure" color="text-emerald-400" />
+                        <TelemetryRow label="🛰️ Satélites" value="09 Activos" color="text-green-400" />
+                        <TelemetryRow label="👥 Personal" value="12 en Turno" color="text-primary" />
+                        <TelemetryRow label="⏱️ Tickets" value={orders.length} color="text-slate-400" />
+                        <TelemetryRow label="🛡️ Status Global" value="Seguro" color="text-emerald-400" />
                     </div>
                 </div>
 
@@ -67,7 +69,7 @@ export default function ResumenView({ orders, onMonitor, MOCK_CLIENTS }: any) {
                         Despliegue Reciente
                     </h2>
                     <div className="space-y-4">
-                        {orders.map((o: any) => (
+                        {orders.map((o: WorkOrder) => (
                             <div key={o.id} className="p-6 glass rounded-3xl border-white/5 flex justify-between items-center group">
                                 <div className="flex items-center gap-6">
                                     <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-primary border border-white/5 group-hover:bg-primary group-hover:text-white transition-all"><MapPin size={20} /></div>
@@ -80,8 +82,8 @@ export default function ResumenView({ orders, onMonitor, MOCK_CLIENTS }: any) {
                                     <p className="text-[9px] font-black uppercase text-primary mb-1 italic">{o.id}</p>
                                     <button
                                         onClick={() => {
-                                            const client = MOCK_CLIENTS.find((c: any) => c.name === o.client)
-                                            const branch = client?.branches.find((b: any) => b.name === o.branch)
+                                            const client = MOCK_CLIENTS.find((c: Client) => c.name === o.client)
+                                            const branch = client?.branches.find((b: Branch) => b.name === o.branch)
                                             if (branch) onMonitor({ client: o.client, branch })
                                         }}
                                         className="px-2 py-0.5 bg-white/5 text-slate-400 rounded-full text-[8px] font-black uppercase tracking-widest border border-white/5 hover:border-primary/50 hover:text-primary transition-all"
@@ -97,9 +99,9 @@ export default function ResumenView({ orders, onMonitor, MOCK_CLIENTS }: any) {
                         <Zap size={20} /> Métricas de Escuadrón
                     </h2>
                     <div className="space-y-6">
-                        <TeamStat name="Blue Alpha" score={98} tasks={12} color="bg-blue-500" />
-                        <TeamStat name="Gold Bravo" score={85} tasks={8} color="bg-yellow-500" />
-                        <TeamStat name="Red Zulu" score={92} tasks={15} color="bg-red-500" />
+                        <TeamStat name="Alpha 01" score={98} tasks={12} color="bg-primary" />
+                        <TeamStat name="Bravo 02" score={85} tasks={8} color="bg-[#B38F4D]" />
+                        <TeamStat name="Zulu 03" score={92} tasks={15} color="bg-slate-700" />
                     </div>
                 </div>
             </div>
@@ -107,12 +109,12 @@ export default function ResumenView({ orders, onMonitor, MOCK_CLIENTS }: any) {
     )
 }
 
-function SquadMarker({ top, left, name, status }: any) {
+function SquadMarker({ top, left, name, status }: { top: string, left: string, name: string, status: 'MOVING' | 'ON_SITE' | 'IDLE' | string }) {
     return (
         <div className="absolute group z-10" style={{ top, left }}>
             <div className="w-16 h-16 flex items-center justify-center relative cursor-default">
                 <div className={`absolute inset-0 rounded-full animate-ping opacity-30 duration-1000 ${status === 'MOVING' ? 'bg-primary' : status === 'ON_SITE' ? 'bg-green-500' : 'bg-slate-500'}`}></div>
-                <div className={`w-5 h-5 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.8)] relative z-10 border-2 border-white/20 transition-transform group-hover:scale-125 ${status === 'MOVING' ? 'bg-primary' : status === 'ON_SITE' ? 'bg-green-500' : 'bg-slate-500'}`}></div>
+                <div className={`w-5 h-5 rounded-full shadow-[0_0_20px_rgba(197,160,89,0.8)] relative z-10 border-2 border-white/20 transition-transform group-hover:scale-125 ${status === 'MOVING' ? 'bg-primary' : status === 'ON_SITE' ? 'bg-green-500' : 'bg-slate-500'}`}></div>
             </div>
             <div className="absolute top-14 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-30 scale-90 group-hover:scale-100 shadow-2xl flex flex-col items-center">
                 <p className="text-[10px] font-black uppercase tracking-widest text-white leading-none mb-1">{name}</p>
@@ -125,7 +127,7 @@ function SquadMarker({ top, left, name, status }: any) {
     )
 }
 
-function TelemetryRow({ label, value, color }: any) {
+function TelemetryRow({ label, value, color }: { label: string, value: string | number, color: string }) {
     return (
         <div className="flex justify-between items-center">
             <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{label}</span>

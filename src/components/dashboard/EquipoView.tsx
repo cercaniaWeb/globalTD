@@ -1,8 +1,11 @@
 'use client'
 
 import { User, MessageCircle } from 'lucide-react'
+import type { WorkOrder } from '@/app/dashboard/page'
 
-export default function EquipoView({ orders, MOCK_TECHNICIANS }: any) {
+type Technician = { id: string; name: string; phone: string; status: string; team: string };
+
+export default function EquipoView({ orders, MOCK_TECHNICIANS }: { orders: WorkOrder[], MOCK_TECHNICIANS: Technician[] }) {
     return (
         <div className="space-y-10 animate-in slide-in-from-bottom-4 duration-500 pb-20">
             <div className="flex justify-between items-center">
@@ -10,8 +13,8 @@ export default function EquipoView({ orders, MOCK_TECHNICIANS }: any) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                {MOCK_TECHNICIANS.map((tech: any) => {
-                    const activeOrder = orders.find((o: any) => o.technician === tech.name && o.status !== 'Completada')
+                {MOCK_TECHNICIANS.map((tech: Technician) => {
+                    const activeOrder = orders.find((o: WorkOrder) => o.technician === tech.name && o.status !== 'Completada')
                     const isAvailable = !activeOrder
 
                     return (

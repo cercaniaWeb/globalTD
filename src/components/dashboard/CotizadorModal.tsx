@@ -4,14 +4,19 @@ import { useState, useEffect } from 'react'
 import { X, Search, Plus, Trash2, FileText, Download, DollarSign, Package, ShoppingCart } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { supabase } from '@/lib/supabase'
+import { SyscomProduct } from '@/lib/syscom'
 
-export default function CotizadorModal({ lead, onClose, addNotification }: any) {
-    const [products, setProducts] = useState<any[]>([])
+type QuoteItem = SyscomProduct & { quantity: number };
+type Lead = { id: string; client_name?: string; notes?: string | null; };
+
+export default function CotizadorModal({ lead, onClose, addNotification }: { lead: Lead, onClose: () => void, addNotification: (message: string, type: string) => void }) {
+    const [products, setProducts] = useState<SyscomProduct[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
 
     // Line items en la cotización
-    const [quoteItems, setQuoteItems] = useState<any[]>([])
+    const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([])
     const [handLabor, setHandLabor] = useState(0)
 
     useEffect(() => {
@@ -24,15 +29,15 @@ export default function CotizadorModal({ lead, onClose, addNotification }: any) 
             .catch(() => setLoading(false))
     }, [])
 
-    const filteredProducts = products.filter(p =>
+    const filteredProducts = products.filter((p: SyscomProduct) =>
         p.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.modelo.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    const addItem = (product: any) => {
-        const existing = quoteItems.find(item => item.producto_id === product.producto_id)
+    const addItem = (product: SyscomProduct) => {
+        const existing = quoteItems.find((item: QuoteItem) => item.producto_id === product.producto_id)
         if (existing) {
-            setQuoteItems(quoteItems.map(item =>
+            setQuoteItems(quoteItems.map((item: QuoteItem) =>
                 item.producto_id === product.producto_id
                     ? { ...item, quantity: item.quantity + 1 }
                     : item
@@ -43,86 +48,160 @@ export default function CotizadorModal({ lead, onClose, addNotification }: any) 
     }
 
     const removeItem = (id: string) => {
-        setQuoteItems(quoteItems.filter(item => item.producto_id !== id))
+        setQuoteItems(quoteItems.filter((item: QuoteItem) => item.producto_id !== id))
     }
 
     const updateQuantity = (id: string, qty: number) => {
         if (qty < 1) return
-        setQuoteItems(quoteItems.map(item =>
+        setQuoteItems(quoteItems.map((item: QuoteItem) =>
             item.producto_id === id ? { ...item, quantity: qty } : item
         ))
     }
 
-    const subtotal = quoteItems.reduce((acc, item) => acc + (parseFloat(item.precio_cliente) * item.quantity), 0)
+    const subtotal = quoteItems.reduce((acc: number, item: QuoteItem) => acc + (parseFloat(item.precio_cliente ?? '0') * item.quantity), 0)
     const total = subtotal + handLabor
 
-    const generatePDF = () => {
+    const generatePDF = async () => {
         if (quoteItems.length === 0) {
             addNotification('Agrega productos a la cotización primero', 'error')
             return
         }
 
-        const doc = new jsPDF()
+        try {
+            addNotification('GENERANDO DOCUMENTO...', 'info')
+            const doc = new jsPDF()
+            const pageWidth = doc.internal.pageSize.getWidth()
+            const pageHeight = doc.internal.pageSize.getHeight()
 
-        // Header
-        doc.setFontSize(22)
-        doc.setTextColor(37, 99, 235) // Primary Blue
-        doc.text('Global Telecom', 14, 20)
+            const getImageData = (url: string): Promise<{ data: string, w: number, h: number }> => {
+                return new Promise((resolve) => {
+                    const img = new Image()
+                    img.crossOrigin = 'Anonymous'
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas')
+                        const ctx = canvas.getContext('2d')
+                        canvas.width = img.width
+                        canvas.height = img.height
+                        ctx?.drawImage(img, 0, 0)
+                        resolve({ data: canvas.toDataURL('image/jpeg', 0.5), w: img.width, h: img.height })
+                    }
+                    img.onerror = () => resolve({ data: '', w: 0, h: 0 })
+                    img.src = url
+                })
+            }
 
-        doc.setFontSize(10)
-        doc.setTextColor(100)
-        doc.text('PROPUESTA COMERCIAL DE SEGURIDAD', 14, 28)
+            // Header Fixed (Oxford Blue)
+            doc.setFillColor(27, 38, 59)
+            doc.rect(0, 0, pageWidth, 45, 'F')
+            
+            // Gold Accent Bar
+            doc.setFillColor(197, 160, 89)
+            doc.rect(0, 45, pageWidth, 2, 'F')
 
-        // Client Info
-        doc.setFontSize(12)
-        doc.setTextColor(20)
-        doc.text(`Cliente: ${lead?.client_name || 'Cliente Mostrador'}`, 14, 45)
-        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 52)
-        doc.text(`Cotización #: GT-${Math.floor(Math.random() * 10000)}`, 14, 59)
+            doc.setTextColor(255, 255, 255)
+            doc.setFontSize(22)
+            doc.setFont('helvetica', 'bold')
+            doc.text('Global Telecomunicaciones Digitales', 14, 20)
+            doc.setFontSize(8)
+            doc.setTextColor(197, 160, 89)
+            doc.text('INGENIERÍA DE DETALLE EN SEGURIDAD ELECTRÓNICA', 14, 28)
 
-        // Table
-        const tableData = quoteItems.map(item => [
-            item.modelo,
-            item.titulo.substring(0, 50) + '...',
-            item.quantity.toString(),
-            `$${parseFloat(item.precio_cliente).toFixed(2)}`,
-            `$${(parseFloat(item.precio_cliente) * item.quantity).toFixed(2)}`
-        ])
+            // Folio (GT -> CS)
+            doc.setFillColor(15, 23, 42)
+            doc.roundedRect(pageWidth - 65, 10, 50, 25, 3, 3, 'F')
+            doc.setTextColor(255, 255, 255)
+            doc.setFontSize(7)
+            doc.text('FOLIO:', pageWidth - 60, 18)
+            doc.setFontSize(10)
+            doc.text(`CS-${Math.floor(Date.now() / 1000).toString().slice(-6)}`, pageWidth - 60, 25)
 
-        // Add hand labor entry if exists
-        if (handLabor > 0) {
-            tableData.push([
-                'SRV-INST',
-                'Mano de Obra y Materiales de Instalación',
-                '1',
-                `$${handLabor.toFixed(2)}`,
-                `$${handLabor.toFixed(2)}`
-            ])
+            // Client
+            doc.setFillColor(248, 250, 252)
+            doc.roundedRect(14, 52, pageWidth - 28, 20, 2, 2, 'F')
+            doc.setTextColor(15, 23, 42)
+            doc.setFontSize(10)
+            doc.text(`CLIENTE: ${lead?.client_name?.toUpperCase() || 'MOSTRADOR'}`, 20, 64)
+
+            const rows: string[][] = []
+            const imgs: { data: string; w: number; h: number }[] = []
+
+            for (const item of quoteItems) {
+                let imgObj = { data: '', w: 0, h: 0 }
+                if (item.img_portada) {
+                    imgObj = await getImageData(item.img_portada)
+                }
+                imgs.push(imgObj)
+                rows.push([
+                    '', // Image cell MUST be empty
+                    `${item.modelo}\n${item.marca}`,
+                    item.titulo.substring(0, 100),
+                    item.quantity.toString(),
+                    `$${parseFloat(item.precio_cliente ?? '0').toFixed(2)}`,
+                    `$${(parseFloat(item.precio_cliente ?? '0') * item.quantity).toFixed(2)}`
+                ])
+            }
+
+            if (handLabor > 0) {
+                rows.push(['', 'MANO DE OBRA', 'Instalación y puesta en marcha', '1', `$${handLabor.toFixed(2)}`, `$${handLabor.toFixed(2)}` ])
+            }
+
+            autoTable(doc, {
+                startY: 80,
+                head: [['IMG', 'MODELO', 'DESCRIPCIÓN', 'CANT', 'PRECIO', 'TOTAL']],
+                body: rows,
+                theme: 'grid',
+                headStyles: { fillColor: [27, 38, 59], textColor: [255, 255, 255], fontSize: 8 },
+                styles: { fontSize: 7, cellPadding: 4, minCellHeight: 20, valign: 'middle' },
+                columnStyles: { 0: { cellWidth: 20 }, 1: { fontStyle: 'bold' } },
+                didDrawCell: (data) => {
+                    if (data.section === 'body' && data.column.index === 0) {
+                        const img = imgs[data.row.index]
+                        if (img && img.data) {
+                            const padding = 2
+                            const cw = data.cell.width - (padding * 2)
+                            const ch = data.cell.height - (padding * 2)
+                            const r = Math.min(cw / img.w, ch / img.h)
+                            const w = img.w * r
+                            const h = img.h * r
+                            doc.addImage(img.data, 'JPEG', data.cell.x + (data.cell.width - w) / 2, data.cell.y + (data.cell.height - h) / 2, w, h)
+                        }
+                    }
+                }
+            })
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const finalY = (doc as any).lastAutoTable.finalY + 10
+            const iva = total * 0.16
+            const gt = total + iva
+
+            doc.setFontSize(9)
+            doc.text(`SUBTOTAL: $${total.toFixed(2)}`, pageWidth - 20, finalY, { align: 'right' })
+            doc.text(`IVA (16%): $${iva.toFixed(2)}`, pageWidth - 20, finalY + 6, { align: 'right' })
+            doc.setFontSize(12)
+            doc.setFont('helvetica', 'bold')
+            doc.setTextColor(27, 38, 59)
+            doc.text(`TOTAL: $${gt.toFixed(2)} MXN`, pageWidth - 20, finalY + 14, { align: 'right' })
+
+            doc.setFontSize(7)
+            doc.setFont('helvetica', 'normal')
+            doc.setTextColor(150, 150, 150)
+            doc.text('Este documento es una propuesta técnica basada en Soluciones por Global Telecomunicaciones Digitales.', 14, pageHeight - 15)
+
+            doc.save(`Cotizacion_${lead?.client_name?.replace(/\s+/g, '_')}.pdf`)
+
+            const pdfBlob = doc.output('blob')
+            const fileName = `quote_${lead.id}_${Date.now()}.pdf`
+            const { error: upErr } = await supabase.storage.from('cotizaciones').upload(fileName, pdfBlob, { contentType: 'application/pdf' })
+            if (!upErr) {
+                const { data: { publicUrl } } = supabase.storage.from('cotizaciones').getPublicUrl(fileName)
+                await supabase.from('crm_leads').update({ status: 'Cotizado', notes: (lead.notes || '') + `\n[COTIZACIÓN GENERADA]: ${publicUrl}` }).eq('id', lead.id)
+                addNotification('COTIZACIÓN GUARDADA', 'success')
+            }
+            onClose()
+        } catch (e) {
+            console.error(e)
+            addNotification('Error crítico en PDF', 'error')
         }
-
-        autoTable(doc, {
-            startY: 70,
-            head: [['Modelo', 'Descripción', 'Cant.', 'Precio Unit.', 'Importe (MXN)']],
-            body: tableData,
-            theme: 'striped',
-            headStyles: { fillColor: [15, 23, 42] },
-            styles: { fontSize: 9 }
-        })
-
-        // Totals
-        const finalY = (doc as any).lastAutoTable.finalY || 70
-        doc.setFontSize(14)
-        doc.setTextColor(0)
-        doc.text(`Total Inversión: $${total.toFixed(2)} MXN`, 120, finalY + 20)
-
-        doc.setFontSize(8)
-        doc.setTextColor(150)
-        doc.text('* Precios sujetos a cambio sin previo aviso. Precios más IVA.', 14, finalY + 40)
-
-        doc.save(`Cotizacion_${lead?.client_name?.replace(' ', '_') || 'Global_Telecom'}.pdf`)
-
-        addNotification('Cotización PDF Generada con Éxito', 'success')
-        onClose()
     }
 
     return (
@@ -214,7 +293,7 @@ export default function CotizadorModal({ lead, onClose, addNotification }: any) 
                                     >+</button>
                                 </div>
                                 <div className="w-20 text-right font-mono text-[10px] text-emerald-400">
-                                    ${(parseFloat(item.precio_cliente) * item.quantity).toFixed(2)}
+                                    ${(parseFloat(item.precio_cliente ?? '0') * item.quantity).toFixed(2)}
                                 </div>
                                 <button
                                     onClick={() => removeItem(item.producto_id)}

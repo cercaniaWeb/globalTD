@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import {
     Users,
@@ -13,13 +12,11 @@ import {
     Shield,
     LogOut,
     ClipboardList,
-    MoreVertical,
     Hammer,
     Zap,
     Key,
     UserPlus
 } from 'lucide-react'
-import { withAuth } from '@/hoc/withAuth'
 
 // Dashboard Components
 import ResumenView from '@/components/dashboard/ResumenView'
@@ -36,10 +33,12 @@ import { SidebarItem } from '@/components/dashboard/SharedComponents'
 
 // ─── Tipos y Mocks Extendidos ──────────────────────────────────
 
-type Branch = { id: string; name: string; address: string; phone: string; cameras: number }
-type Client = { id: string; name: string; email: string; phone: string; systems: number; lastService: string; branches: Branch[] }
-type Technician = { id: string; name: string; phone: string; status: 'Disponible' | 'En Sitio' | 'Fuera de Servicio'; team: string }
-type WorkOrder = {
+export type Branch = { id: string; name: string; address: string; phone: string; cameras: number }
+type ProfileSubset = { id: string; full_name: string | null; email: string; }
+type ClientDeviceRow = { id: string; user_id: string; camera_name: string; device_type: string; url_or_ip: string; port_http: number; port_rtsp: number; username: string; password_enc: string; channel_id: number; is_active: boolean; created_at: string; }
+export type Client = { id: string; name: string; email: string; phone: string; systems: number; lastService: string; branches: Branch[] }
+export type Technician = { id: string; name: string; phone: string; status: 'Disponible' | 'En Sitio' | 'Fuera de Servicio'; team: string }
+export type WorkOrder = {
     id: string;
     client: string;
     branch: string;
@@ -82,10 +81,18 @@ const MOCK_TECHNICIANS: Technician[] = [
     { id: 'TECH-04', name: 'Lucía Torres', phone: '5522334455', status: 'Fuera de Servicio', team: 'Gold Bravo' },
 ]
 
+type RealClient = {
+    id: string;
+    name: string;
+    email: string;
+    devices: ClientDeviceRow[];
+}
+
 function OperationsDashboard() {
     const [activeTab, setActiveTab] = useState('resumen')
     const [showOrderModal, setShowOrderModal] = useState(false)
-    const [monitoringBranch, setMonitoringBranch] = useState<{ client: string, branch: Branch } | null>(null)
+    const [monitoringBranch, setMonitoringBranch] = useState<{ client: string, branch: { name: string } } | null>(null)
+    const [realClients, setRealClients] = useState<RealClient[]>([])
     const [recentOrders, setRecentOrders] = useState<WorkOrder[]>([
         {
             id: 'WO-101', client: 'Roberto Sánchez', branch: 'Matriz Polanco', technician: 'Juan Pérez', status: 'En Proceso', address: 'Calle 123, Polanco', date: '10 Mar', priority: 'High', type: 'Instalación',
@@ -139,11 +146,55 @@ function OperationsDashboard() {
             }
         }
 
+        const fetchRealData = async () => {
+            const { data: profiles }: { data: ProfileSubset[] | null } = await supabase
+                .from('profiles')
+                .select('id, full_name, email')
+                .eq('role', 'client')
+
+            const { data: devices }: { data: ClientDeviceRow[] | null } = await supabase
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .from('client_devices' as any)
+                .select('*')
+
+            if (profiles) {
+                const combined = profiles.map((p: ProfileSubset) => ({
+                    id: p.id,
+                    name: p.full_name || 'Desconocido',
+                    email: p.email,
+                    devices: (devices as ClientDeviceRow[])?.filter(d => d.user_id === p.id) || []
+                }))
+                setRealClients(combined)
+            }
+        }
+
+        fetchRealData()
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setShowNotifPanel(false)
+                setShowOrderModal(false)
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+
         const interval = setInterval(checkReminders, 60000)
-        return () => clearInterval(interval)
+        return () => {
+            clearInterval(interval)
+            window.removeEventListener('keydown', handleKeyDown)
+        }
     }, [])
 
-    const handleCreateOrder = (orderData: any) => {
+    const handleCreateOrder = (orderData: {
+        clientName: string;
+        branchName: string;
+        technicianName: string;
+        address: string;
+        priority: string;
+        type: 'Levantamiento' | 'Instalación';
+        instructions?: string[];
+    }) => {
         const nextFolio = recentOrders.length > 0
             ? parseInt(recentOrders[0].id.split('-')[1]) + 1
             : 101
@@ -170,12 +221,12 @@ function OperationsDashboard() {
             {/* Sidebar Corporativo */}
             <aside className="w-72 glass border-r border-white/5 hidden lg:flex flex-col p-8 sticky top-0 h-screen z-30">
                 <div className="flex items-center gap-3 mb-10 transition-transform hover:scale-105 cursor-default">
-                    <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30">
-                        <Shield className="text-white w-6 h-6" />
+                    <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-amber-900/30">
+                        <Shield className="text-[#0F172A] w-6 h-6" />
                     </div>
                     <div>
-                        <span className="text-lg font-black uppercase tracking-tighter italic block leading-none">Global</span>
-                        <span className="text-[10px] font-black text-primary uppercase tracking-[4px]">Operations</span>
+                        <span className="text-xl font-black tracking-tighter italic block leading-none text-white">CORE</span>
+                        <span className="text-xs font-bold text-primary tracking-[2px]">SYSTEMS</span>
                     </div>
                 </div>
 
@@ -191,7 +242,7 @@ function OperationsDashboard() {
                 </nav>
 
                 <div className="pt-8 border-t border-white/5 space-y-4 text-slate-500">
-                    <button className="w-full flex items-center gap-3 px-6 py-3 hover:text-red-500 hover:bg-red-500/5 rounded-2xl transition-all font-black uppercase tracking-widest text-[9px]">
+                    <button className="w-full flex items-center gap-3 px-6 py-3 hover:text-red-500 hover:bg-red-500/5 rounded-2xl transition-all font-bold text-xs">
                         <LogOut className="w-4 h-4" /> Cerrar Sesión
                     </button>
                 </div>
@@ -204,7 +255,7 @@ function OperationsDashboard() {
                     <div className="flex items-center gap-4">
                         <h2 className="text-[10px] font-black uppercase tracking-[5px] text-primary">{activeTab}</h2>
                         <div className="h-4 w-px bg-white/10 hidden md:block"></div>
-                        <p className="text-[10px] font-bold text-slate-500 hidden md:block uppercase tracking-widest">Network ID: GT-X290</p>
+                        <p className="text-[10px] font-bold text-slate-500 hidden md:block uppercase tracking-widest">Core Node: CS-X290</p>
                     </div>
 
                     <div className="flex items-center gap-6">
@@ -238,41 +289,36 @@ function OperationsDashboard() {
                             </button>
 
                             {showNotifPanel && (
-                                <div className="absolute top-16 right-0 w-80 glass border border-white/10 rounded-[32px] shadow-2xl p-6 z-[60] animate-in slide-in-from-top-2 duration-300">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h3 className="text-[10px] font-black uppercase tracking-[3px] text-white">Notificaciones</h3>
-                                        <button
-                                            onClick={() => setNotifications([])}
-                                            className="text-[8px] font-black uppercase text-slate-500 hover:text-primary transition-colors"
-                                        >Limpiar Todo</button>
-                                    </div>
-                                    <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-                                        {notifications.length === 0 ? (
-                                            <div className="py-10 text-center space-y-4">
-                                                <Zap size={24} className="mx-auto text-slate-800" />
-                                                <p className="text-[9px] font-black uppercase text-slate-700 tracking-widest leading-relaxed">Sin actividad reciente en el perímetro</p>
-                                            </div>
-                                        ) : (
-                                            notifications.map(n => (
-                                                <div key={n.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2 group hover:border-primary/20 transition-all">
-                                                    <div className="flex justify-between items-start">
-                                                        <p className="text-[10px] font-black uppercase tracking-tight text-slate-200">{n.msg}</p>
-                                                        <div className={`w-1.5 h-1.5 rounded-full ${n.type === 'success' ? 'bg-green-500' : 'bg-primary'}`}></div>
-                                                    </div>
-                                                    <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">{n.date.toLocaleTimeString()}</p>
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifPanel(false)}></div>
+                                    <div className="absolute top-16 right-0 w-80 glass border border-white/10 rounded-[32px] shadow-2xl p-6 z-50 animate-in slide-in-from-top-2 duration-300">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h3 className="text-[10px] font-black uppercase tracking-[3px] text-white">Notificaciones</h3>
+                                            <button
+                                                onClick={() => setNotifications([])}
+                                                className="text-[8px] font-black uppercase text-slate-500 hover:text-primary transition-colors"
+                                            >Limpiar Todo</button>
+                                        </div>
+                                        <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                                            {notifications.length === 0 ? (
+                                                <div className="py-10 text-center space-y-4">
+                                                    <Zap size={24} className="mx-auto text-slate-800" />
+                                                    <p className="text-[9px] font-black uppercase text-slate-700 tracking-widest leading-relaxed">Sin actividad reciente en el perímetro</p>
                                                 </div>
-                                            ))
-                                        )}
+                                            ) : (
+                                                notifications.map(n => (
+                                                    <div key={n.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2 group hover:border-primary/20 transition-all">
+                                                        <div className="flex justify-between items-start">
+                                                            <p className="text-[10px] font-black uppercase tracking-tight text-slate-200">{n.msg}</p>
+                                                            <div className={`w-1.5 h-1.5 rounded-full ${n.type === 'success' ? 'bg-green-500' : 'bg-primary'}`}></div>
+                                                        </div>
+                                                        <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">{n.date.toLocaleTimeString()}</p>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="mt-6 pt-4 border-t border-white/5">
-                                        <button
-                                            onClick={() => Notification.requestPermission()}
-                                            className="w-full py-3 bg-white/5 rounded-xl text-[8px] font-black uppercase tracking-[2px] text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <Shield size={10} /> Forzar Permisos Push
-                                        </button>
-                                    </div>
-                                </div>
+                                </>
                             )}
                         </div>
                     </div>
@@ -291,7 +337,7 @@ function OperationsDashboard() {
                 <div className="p-4 md:p-12 pb-28 md:pb-12">
                     {activeTab === 'resumen' && <ResumenView setActiveTab={setActiveTab} orders={recentOrders} onMonitor={setMonitoringBranch} MOCK_CLIENTS={MOCK_CLIENTS} />}
                     {activeTab === 'crm' && <CRMView addNotification={addNotification} />}
-                    {activeTab === 'clientes' && <ClientesView onMonitor={setMonitoringBranch} MOCK_CLIENTS={MOCK_CLIENTS} />}
+                    {activeTab === 'clientes' && <ClientesView onMonitor={setMonitoringBranch} realClients={realClients} />}
                     {activeTab === 'ordenes' && <OrdenesView orders={recentOrders} addNotification={addNotification} onFinishOrder={(id: string) => {
                         setRecentOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'Completada' } : o))
                         const order = recentOrders.find(o => o.id === id)
@@ -312,7 +358,7 @@ function OperationsDashboard() {
                 </button>
                 <button onClick={() => setActiveTab('crm')} className={`flex-1 flex flex-col items-center justify-center p-2 rounded-xl transition-all ${activeTab === 'crm' ? 'text-primary bg-primary/10' : 'text-slate-500 hover:text-slate-300'}`}>
                     <Users size={20} />
-                    <span className="text-[8px] font-black uppercase mt-1">CRM</span>
+                    <span className="text-[10px] font-bold mt-1">CRM</span>
                 </button>
 
                 {/* Floating Action Button for Mobile */}
@@ -357,4 +403,4 @@ function OperationsDashboard() {
     )
 }
 
-export default withAuth(OperationsDashboard)
+export default OperationsDashboard

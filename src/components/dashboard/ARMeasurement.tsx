@@ -19,10 +19,10 @@ const store = createXRStore({
 
 // ─── Componentes 3D ──────────────────────────────────────────
 
-function MeasurementPoints({ points, setPoints }: any) {
+function MeasurementPoints({ points, setPoints }: { points: THREE.Vector3[], setPoints: React.Dispatch<React.SetStateAction<THREE.Vector3[]>> }) {
     return (
         <>
-            {points.map((p: any, i: number) => (
+            {points.map((p: THREE.Vector3, i: number) => (
                 <mesh key={i} position={p}>
                     <sphereGeometry args={[0.02, 16, 16]} />
                     <meshStandardMaterial color="#2563eb" emissive="#2563eb" emissiveIntensity={2} />
@@ -101,7 +101,7 @@ function Reticle({ onHit, points }: { onHit: (pos: THREE.Vector3) => void, point
     )
 }
 
-function ARSceneProxy({ setPoints, points }: any) {
+function ARSceneProxy({ setPoints, points }: { setPoints: React.Dispatch<React.SetStateAction<THREE.Vector3[]>>, points: THREE.Vector3[] }) {
     const handleHit = (position: THREE.Vector3) => {
         if (points.length >= 2) {
             setPoints([position])
@@ -130,7 +130,13 @@ function ARSceneProxy({ setPoints, points }: any) {
 
 // ─── Componente Principal ─────────────────────────────────────
 
-export default function ARMeasurement({ lead, onClose, addNotification }: any) {
+type ARMeasurementProps = {
+    lead: { id: string };
+    onClose: () => void;
+    addNotification: (message: string, type: string) => void;
+};
+
+export default function ARMeasurement({ lead, onClose, addNotification }: ARMeasurementProps) {
     const [points, setPoints] = useState<THREE.Vector3[]>([])
     const [isSaving, setIsSaving] = useState(false)
     const [isPresenting, setIsPresenting] = useState(false)

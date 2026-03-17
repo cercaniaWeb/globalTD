@@ -1,16 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
+import type { Client, Technician, Branch } from '@/app/dashboard/page'
 import { Hammer, X, Search, Plus, MapPin, ArrowRight } from 'lucide-react'
 
-export default function OrderModal({ onClose, onSubmit, MOCK_CLIENTS, MOCK_TECHNICIANS }: any) {
+type OrderFormData = {
+    clientName: string;
+    branchName: string;
+    technicianName: string;
+    address: string;
+    priority: string;
+    type: 'Levantamiento' | 'Instalación';
+    instructions: string[];
+};
+
+export default function OrderModal({ onClose, onSubmit, MOCK_CLIENTS, MOCK_TECHNICIANS }: { onClose: () => void, onSubmit: (data: OrderFormData) => void, MOCK_CLIENTS: Client[], MOCK_TECHNICIANS: Technician[] }) {
     const [isNewClient, setIsNewClient] = useState(false)
     const [formData, setFormData] = useState({
         client: '0',
         branch: '0',
         tech: '0',
         priority: 'Medium',
-        orderType: 'Levantamiento',
+        orderType: 'Levantamiento' as 'Levantamiento' | 'Instalación',
         newClientName: '',
         newClientAddress: '',
         instructions: ''
@@ -20,13 +31,13 @@ export default function OrderModal({ onClose, onSubmit, MOCK_CLIENTS, MOCK_TECHN
     const selectedBranch = !isNewClient ? selectedClient.branches[parseInt(formData.branch)] : null
     const selectedTech = MOCK_TECHNICIANS[parseInt(formData.tech)]
 
-    const handleSubmit = (e: any) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         onSubmit({
             clientName: isNewClient ? formData.newClientName : selectedClient.name,
-            branchName: isNewClient ? 'Sede Matriz (Nuevo)' : selectedBranch?.name,
+            branchName: isNewClient ? 'Sede Matriz (Nuevo)' : selectedBranch!.name,
             technicianName: selectedTech.name,
-            address: isNewClient ? formData.newClientAddress : selectedBranch?.address,
+            address: isNewClient ? formData.newClientAddress : selectedBranch?.address || '',
             priority: formData.priority,
             type: formData.orderType,
             instructions: formData.instructions.split('\n').filter((i: string) => i.trim() !== '')
@@ -59,7 +70,7 @@ export default function OrderModal({ onClose, onSubmit, MOCK_CLIENTS, MOCK_TECHN
                             <button
                                 type="button"
                                 onClick={() => setIsNewClient(true)}
-                                className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isNewClient ? 'bg-primary text-white shadow-lg shadow-blue-900/40' : 'text-slate-500 hover:text-slate-300'}`}
+                                className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isNewClient ? 'bg-primary text-[#0F172A] shadow-lg shadow-amber-900/20' : 'text-slate-500 hover:text-slate-300'}`}
                             >Alta Nuevo Cliente</button>
                         </div>
                     </div>
@@ -93,7 +104,7 @@ export default function OrderModal({ onClose, onSubmit, MOCK_CLIENTS, MOCK_TECHN
                                     value={formData.client}
                                     onChange={(e) => setFormData({ ...formData, client: e.target.value, branch: '0' })}
                                 >
-                                    {MOCK_CLIENTS.map((c: any, i: number) => <option key={c.id} value={i}>{c.name}</option>)}
+                                    {MOCK_CLIENTS.map((c: Client, i: number) => <option key={c.id} value={i}>{c.name}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-3">
@@ -103,7 +114,7 @@ export default function OrderModal({ onClose, onSubmit, MOCK_CLIENTS, MOCK_TECHN
                                     value={formData.branch}
                                     onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
                                 >
-                                    {selectedClient.branches.map((b: any, i: number) => <option key={b.id} value={i}>{b.name}</option>)}
+                                    {selectedClient.branches.map((b: Branch, i: number) => <option key={b.id} value={i}>{b.name}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -143,7 +154,7 @@ export default function OrderModal({ onClose, onSubmit, MOCK_CLIENTS, MOCK_TECHN
                                 value={formData.tech}
                                 onChange={(e) => setFormData({ ...formData, tech: e.target.value })}
                             >
-                                {MOCK_TECHNICIANS.map((t: any, i: number) => <option key={t.id} value={i}>{t.name} ({t.status})</option>)}
+                                {MOCK_TECHNICIANS.map((t: Technician, i: number) => <option key={t.id} value={i}>{t.name} ({t.status})</option>)}
                             </select>
                         </div>
                         <div className="space-y-3">
@@ -153,7 +164,7 @@ export default function OrderModal({ onClose, onSubmit, MOCK_CLIENTS, MOCK_TECHN
                                     <button
                                         key={p} type="button"
                                         onClick={() => setFormData({ ...formData, priority: p })}
-                                        className={`flex-1 py-3.5 rounded-xl text-[8px] font-black uppercase tracking-widest border transition-all ${formData.priority === p ? 'bg-primary border-primary text-white shadow-lg shadow-blue-900/40' : 'bg-white/5 border-white/5 text-slate-500'}`}
+                                        className={`flex-1 py-3.5 rounded-xl text-[8px] font-black uppercase tracking-widest border transition-all ${formData.priority === p ? 'bg-primary border-primary text-[#0F172A] shadow-lg shadow-amber-900/20' : 'bg-white/5 border-white/5 text-slate-500'}`}
                                     >{p}</button>
                                 ))}
                             </div>
@@ -174,7 +185,7 @@ export default function OrderModal({ onClose, onSubmit, MOCK_CLIENTS, MOCK_TECHN
                         <button type="button" onClick={onClose} className="flex-1 py-5 rounded-[22px] text-[10px] font-black uppercase tracking-[4px] text-slate-500 border border-white/10 hover:bg-white/5 transition-all">Abortar</button>
                         <button
                             type="submit"
-                            className="flex-[2] bg-primary hover:bg-blue-600 text-white py-5 rounded-[22px] text-[10px] font-black uppercase tracking-[4px] shadow-xl shadow-blue-900/30 transition-all flex items-center justify-center gap-3 group shrink-0"
+                            className="flex-[2] bg-primary hover:bg-[#B38F4D] text-[#0F172A] py-5 rounded-[22px] text-[10px] font-black uppercase tracking-[4px] shadow-xl shadow-amber-900/30 transition-all flex items-center justify-center gap-3 group shrink-0"
                         >
                             Desplegar Orden de Trabajo <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                         </button>

@@ -68,11 +68,11 @@ export default function RegisterPage() {
                         </div>
                     </Link>
                     <div className="space-y-1">
-                        <h1 className="text-2xl font-extrabold uppercase tracking-tight text-slate-900">
-                            Registro de <span className="text-primary italic">Socios</span>
+                        <h1 className="text-2xl font-black uppercase tracking-tight text-slate-900 leading-none">
+                            Ecosistema de <span className="text-primary italic">Socios</span>
                         </h1>
-                        <p className="text-slate-500 font-medium text-xs uppercase tracking-widest">
-                            Únete a la red de Global Telecom
+                        <p className="text-slate-500 font-bold text-[9px] uppercase tracking-[4px] mt-2">
+                            Grado Arquitectónico Global Telecomunicaciones Digitales
                         </p>
                     </div>
                 </div>
@@ -126,13 +126,13 @@ export default function RegisterPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary hover:bg-blue-900 text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-blue-900/10 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed h-[56px]"
+                            className="w-full bg-primary hover:bg-[#B38F4D] text-[#0F172A] py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-amber-900/20 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed h-[56px]"
                         >
                             {loading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <>
-                                    Crear Mi Cuenta <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    Activar Mi Acceso <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </>
                             )}
                         </button>

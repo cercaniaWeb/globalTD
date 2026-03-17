@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
-import { getCctvProducts } from '@/lib/syscom';
+import { getCctvProducts, SyscomProduct } from '@/lib/syscom';
+
+export const revalidate = 300; // Cache la respuesta por 5 minutos para optimizar performance
 
 export async function GET() {
     try {
         const products = await getCctvProducts();
 
-        // Aplicamos el margen de utilidad corporativo (ejercicio: 25%)
-        const margin = 1.25;
-        const exchangeRate = 20.00;
-        const productsWithMargin = products.map(p => {
-            const basePrice = parseFloat(p.precio) || 0;
+        // Aplicamos el margen de utilidad corporativo (ejercicio: 25% por defecto)
+        const margin = parseFloat(process.env.PROFIT_MARGIN || '1.25');
+        const exchangeRate = parseFloat(process.env.USD_TO_MXN || '20.00');
+        const productsWithMargin = products.map((p: SyscomProduct) => {
+            const basePriceStr = p.precios?.precio_1 || p.precio || "0";
+            const basePrice = parseFloat(basePriceStr) || 0;
             return {
                 ...p,
                 precio_cliente: basePrice > 0 ? (basePrice * margin * exchangeRate).toFixed(2) : "Consulte",
@@ -18,8 +21,9 @@ export async function GET() {
         });
 
         return NextResponse.json(productsWithMargin);
-    } catch (error: any) {
-        console.error('Syscom API Error (Falling back to mock data):', error.message);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown Error';
+        console.error('Syscom API Error (Falling back to mock data):', message);
 
         // Fallback mock data para que el sistema siempre sea funcional
         const mockProducts = [
@@ -61,8 +65,8 @@ export async function GET() {
             }
         ];
 
-        const margin = 1.25;
-        const exchangeRate = 20.00; // Asumiendo base USD de Syscom a MXN
+        const margin = parseFloat(process.env.PROFIT_MARGIN || '1.25');
+        const exchangeRate = parseFloat(process.env.USD_TO_MXN || '20.00'); // Asumiendo base USD de Syscom a MXN
         const productsWithMargin = mockProducts.map(p => {
             const basePrice = parseFloat(p.precio) || 0;
             return {

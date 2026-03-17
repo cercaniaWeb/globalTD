@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Database } from '@/lib/database.types'
 import {
     format,
     addMonths,
@@ -15,23 +16,24 @@ import {
     addDays
 } from 'date-fns'
 
-export default function CalendarView({ addNotification }: { addNotification: any }) {
+export default function CalendarView({ addNotification }: { addNotification: (message: string, type: string) => void }) {
     const [currentMonth, setCurrentMonth] = useState(new Date())
-    const [events, setEvents] = useState<any[]>([])
+    const [events, setEvents] = useState<Database['public']['Tables']['calendar_events']['Row'][]>([])
     const [showEventModal, setShowEventModal] = useState(false)
     const [selectedDate, setSelectedDate] = useState(new Date())
-
-    useEffect(() => {
-        fetchEvents()
-        if (Notification.permission === 'default') {
-            Notification.requestPermission()
-        }
-    }, [])
 
     const fetchEvents = async () => {
         const { data } = await supabase.from('calendar_events').select('*')
         if (data) setEvents(data)
     }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        fetchEvents()
+        if (Notification.permission === 'default') {
+            Notification.requestPermission()
+        }
+    }, [])
 
     const renderHeader = () => {
         const dateFormat = "MMMM yyyy"

@@ -1,443 +1,452 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import {
-    LayoutDashboard, Video, Settings, Bell, User, LogOut, Shield,
-    Activity, HardDrive, Wifi, Circle, ExternalLink, MapPin,
-    Thermometer, Eye, AlertTriangle, CheckCircle2, Clock,
-    Maximize2, Volume2, VolumeX, RotateCcw, Camera
-} from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { Camera, Shield, Users, LayoutGrid, Bell, Settings, LogOut, ChevronRight, Globe, Lock, Loader2, AlertTriangle, UserPlus, FileText, Send } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
-// ─── Datos Mock de Cámaras ───────────────────────────────────
-const MOCK_CAMERAS = [
-    { id: 1, name: 'Acceso Principal', location: 'Entrada - Planta Baja', model: 'DS-2CD2143G2-IS', resolution: '4MP', status: 'online', recording: true, ai: 'Detección Facial', temp: '38°C', uptime: '45d 12h', storage: '85%' },
-    { id: 2, name: 'Pasillo Oficinas', location: 'Piso 2 - Ala Norte', model: 'DS-2CD2T47G2-L', resolution: '4MP', status: 'online', recording: true, ai: 'Conteo de Personas', temp: '42°C', uptime: '45d 12h', storage: '85%' },
-    { id: 3, name: 'Estacionamiento', location: 'Exterior - Nivel 1', model: 'DS-2CD2087G2-LU', resolution: '8MP/4K', status: 'online', recording: true, ai: 'LPR Placas', temp: '51°C', uptime: '30d 8h', storage: '72%' },
-    { id: 4, name: 'Bodega Central', location: 'Sótano - Almacén', model: 'DS-2CD2347G2-LU', resolution: '4MP', status: 'offline', recording: false, ai: 'Intrusión', temp: '--', uptime: '0d', storage: '90%' },
-    { id: 5, name: 'Recepción', location: 'Planta Baja - Lobby', model: 'DS-2DE4A425IWG-E', resolution: '4MP PTZ', status: 'online', recording: true, ai: 'Auto-Tracking', temp: '36°C', uptime: '45d 12h', storage: '68%' },
-    { id: 6, name: 'Sala de Juntas', location: 'Piso 3 - Sala A', model: 'DS-2CD2143G2-IS', resolution: '4MP', status: 'online', recording: false, ai: 'Ninguna', temp: '34°C', uptime: '45d 12h', storage: '55%' },
-]
+// Tipo de cámara mock o real
+interface CameraData {
+  id: string | number;
+  name: string;
+  type: string;
+  status: 'online' | 'offline';
+  lastUpdate: string;
+  url: string;
+}
 
-const MOCK_EVENTS = [
-    { time: '13:45', event: 'Movimiento detectado', location: 'Cámara 03 - Estacionamiento', type: 'warning', detail: 'Vehículo no registrado' },
-    { time: '12:30', event: 'Rostro identificado', location: 'Cámara 01 - Acceso Principal', type: 'success', detail: 'Luis Romero - Autorizado' },
-    { time: '11:15', event: 'Placa reconocida', location: 'Cámara 03 - Estacionamiento', type: 'info', detail: 'ABC-123-MX' },
-    { time: '10:20', event: 'Cámara desconectada', location: 'Cámara 04 - Bodega Central', type: 'danger', detail: 'Sin señal de red' },
-    { time: '09:00', event: 'Inicio de grabación', location: 'Sistema NVR Principal', type: 'info', detail: 'Grabación programada 24/7' },
-    { time: '08:45', event: 'Backup completado', location: 'NAS de Respaldo', type: 'success', detail: '2.3TB transferidos' },
-]
-
-const MOCK_NVR = [
-    { name: 'NVR Principal', model: 'DS-7616NXI-K2', status: 'online', channels: '12/16', hdd: [{ name: 'WD Purple 4TB', health: 'OK', used: '82%' }, { name: 'WD Purple 4TB', health: 'OK', used: '71%' }] },
-]
+interface ClientDeviceRow {
+  id: string;
+  user_id: string;
+  camera_name: string;
+  device_type: string;
+  url_or_ip: string;
+  port_http: number;
+  port_rtsp: number;
+  username: string;
+  password_enc: string;
+  channel_id: number;
+  is_active: boolean;
+  created_at: string;
+}
 
 export default function PortalPage() {
-    const [activeTab, setActiveTab] = useState('dashboard')
-    const [userName, setUserName] = useState('Cliente Demo')
-    const [selectedCamera, setSelectedCamera] = useState<number | null>(null)
-    const [currentTime, setCurrentTime] = useState('')
-    const router = useRouter()
+  const router = useRouter();
+  const [userName, setUserName] = useState('Cargando...');
+  const [clientId, setClientId] = useState('GTD-...');
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const user = localStorage.getItem('gt_user')
-        if (user) {
-            const parsed = JSON.parse(user)
-            setUserName(parsed.name)
-        }
+  // Simulación inicial de cámaras
+  const [cameras, setCameras] = useState<CameraData[]>([
+    { id: 1, name: "Acceso Principal", type: "PTZ", status: "online", lastUpdate: "Ahora", url: "https://images.unsplash.com/photo-1541888946425-d81bb19480c5?auto=format&fit=crop&q=80&w=800" },
+    { id: 2, name: "Estacionamiento Sur", type: "Fija", status: "online", lastUpdate: "Ahora", url: "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&q=80&w=800" },
+    { id: 3, name: "Área de Piscina", type: "Fija", status: "offline", lastUpdate: "Hace 2h", url: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800" },
+    { id: 4, name: "Pasillo B", type: "Domo", status: "online", lastUpdate: "Ahora", url: "https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&q=80&w=800" }
+  ]);
 
-        const interval = setInterval(() => {
-            setCurrentTime(new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
-        }, 1000)
-        return () => clearInterval(interval)
-    }, [])
+  const [selectedCam, setSelectedCam] = useState<CameraData | null>(null);
+  const [activeTab, setActiveTab] = useState('cameras');
 
-    const handleLogout = () => {
-        localStorage.removeItem('gt_user')
-        router.push('/login')
-    }
+  // Formularios mock
+  const [supportMsg, setSupportMsg] = useState('');
 
-    const onlineCameras = MOCK_CAMERAS.filter(c => c.status === 'online').length
-    const offlineCameras = MOCK_CAMERAS.filter(c => c.status === 'offline').length
+  // Time key for cache busting snapshots
+  const [refreshKey, setRefreshKey] = useState(0);
 
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, id')
+        .eq('id', user.id)
+        .single();
+
+      setUserName(profile?.full_name || user.email || 'Cliente');
+      setClientId(`GTD-${user.id.substring(0, 4).toUpperCase()}`);
+
+      // Obtener cámaras reales de la base de datos
+      const { data: devices } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('client_devices' as any)
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (devices && devices.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const realCameras: CameraData[] = (devices as any[]).map((d: any) => ({
+          id: d.id,
+          name: d.camera_name,
+          type: d.device_type,
+          status: d.is_active ? 'online' : 'offline',
+          lastUpdate: new Date(d.created_at).toLocaleTimeString('es-MX'),
+          url: `/api/cameras/proxy?id=${d.id}`
+        }));
+        setCameras(realCameras);
+      }
+
+      setIsLoading(false);
+    };
+
+    checkAuth();
+
+    // Actualizar las imágenes (snapshots) cada 3 segundos
+    const interval = setInterval(() => {
+        setRefreshKey(Date.now());
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [router]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
+  const activeCameras = cameras.filter(c => c.status === 'online').length;
+
+  if (isLoading) {
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex overflow-hidden">
-            {/* Sidebar */}
-            <aside className="w-64 bg-slate-900/80 border-r border-slate-800 flex flex-col sticky top-0 h-screen">
-                <div className="p-8">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30">
-                            <Shield className="text-white w-5 h-5" />
-                        </div>
-                        <span className="font-black text-xs uppercase tracking-[3px]">Global <span className="text-primary">Secure</span></span>
-                    </div>
-                </div>
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
-                <nav className="flex-1 px-4 space-y-1">
-                    <SidebarItem icon={<LayoutDashboard size={18} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-                    <SidebarItem icon={<Video size={18} />} label="Cámaras Live" active={activeTab === 'cameras'} onClick={() => setActiveTab('cameras')} badge={onlineCameras.toString()} />
-                    <SidebarItem icon={<Activity size={18} />} label="Estado de Salud" active={activeTab === 'health'} onClick={() => setActiveTab('health')} />
-                    <SidebarItem icon={<Clock size={18} />} label="Eventos" active={activeTab === 'events'} onClick={() => setActiveTab('events')} badge={MOCK_EVENTS.length.toString()} />
-                    <SidebarItem icon={<Settings size={18} />} label="Configuración" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
-                </nav>
-
-                <div className="p-4 border-t border-slate-800">
-                    <div onClick={handleLogout} className="flex items-center gap-3 p-3 rounded-xl hover:bg-red-500/10 transition-colors cursor-pointer text-slate-500 hover:text-red-400 group">
-                        <LogOut size={18} />
-                        <span className="text-xs font-bold">Cerrar Sesión</span>
-                    </div>
-                </div>
-            </aside>
-
-            {/* Main */}
-            <main className="flex-1 overflow-y-auto">
-                {/* Top Bar */}
-                <header className="h-16 border-b border-slate-800/50 flex items-center justify-between px-8 bg-slate-950/80 backdrop-blur-md sticky top-0 z-20">
-                    <div>
-                        <h1 className="text-sm font-black uppercase tracking-widest">Bienvenido, <span className="text-primary">{userName}</span></h1>
-                    </div>
-                    <div className="flex items-center gap-6">
-                        <span className="text-[10px] font-mono text-slate-500">{currentTime}</span>
-                        <div className="relative">
-                            <Bell size={18} className="text-slate-400 hover:text-white cursor-pointer transition-colors" />
-                            {offlineCameras > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
-                        </div>
-                        <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-                            <User size={14} className="text-primary" />
-                        </div>
-                    </div>
-                </header>
-
-                <div className="p-8 space-y-8">
-
-                    {/* ═══════════ TAB: DASHBOARD ═══════════ */}
-                    {activeTab === 'dashboard' && (
-                        <div className="space-y-8 animate-in fade-in duration-500">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <StatCard icon={<Wifi className="text-green-500" />} label="Sistemas Online" value={`${onlineCameras}/${MOCK_CAMERAS.length}`} sub="Conectividad activa" color="green" />
-                                <StatCard icon={<HardDrive className="text-blue-500" />} label="Almacenamiento" value="78%" sub="5.2TB / 8TB ocupados" color="blue" />
-                                <StatCard icon={<Video className="text-purple-500" />} label="Grabando" value={MOCK_CAMERAS.filter(c => c.recording).length.toString()} sub="Canales activos" color="purple" />
-                                <StatCard icon={<AlertTriangle className="text-orange-500" />} label="Alertas" value={offlineCameras.toString()} sub={offlineCameras > 0 ? 'Requiere atención' : 'Sin incidentes'} color={offlineCameras > 0 ? 'orange' : 'green'} />
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-sm font-black uppercase tracking-[3px] text-slate-400">Vistas Prioritarias</h2>
-                                    <button onClick={() => setActiveTab('cameras')} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1 uppercase tracking-widest">
-                                        Ver Todas <ExternalLink size={12} />
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <CameraFeed camera={MOCK_CAMERAS[0]} onExpand={() => { setSelectedCamera(0); setActiveTab('cameras') }} />
-                                    <CameraFeed camera={MOCK_CAMERAS[2]} onExpand={() => { setSelectedCamera(2); setActiveTab('cameras') }} />
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-900/50 rounded-3xl border border-slate-800 p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-xs font-black uppercase tracking-[3px] text-slate-400">Últimos Eventos</h3>
-                                    <button onClick={() => setActiveTab('events')} className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest">Ver Más</button>
-                                </div>
-                                <div className="space-y-2">
-                                    {MOCK_EVENTS.slice(0, 4).map((ev, i) => (
-                                        <EventRow key={i} {...ev} />
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ═══════════ TAB: CÁMARAS LIVE ═══════════ */}
-                    {activeTab === 'cameras' && (
-                        <div className="space-y-6 animate-in fade-in duration-500">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-black uppercase tracking-[3px] text-slate-400">
-                                    <Camera className="inline mr-2 text-primary" size={16} />
-                                    Todas las Cámaras ({MOCK_CAMERAS.length})
-                                </h2>
-                                <div className="flex gap-2 text-[9px] font-black uppercase">
-                                    <span className="flex items-center gap-1 text-green-500"><Circle size={6} className="fill-green-500" /> {onlineCameras} Online</span>
-                                    <span className="flex items-center gap-1 text-red-500 ml-4"><Circle size={6} className="fill-red-500" /> {offlineCameras} Offline</span>
-                                </div>
-                            </div>
-
-                            {selectedCamera !== null && (
-                                <div className="space-y-4 animate-in zoom-in duration-300">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-2">
-                                            <Maximize2 size={14} className="text-primary" /> Vista Expandida: {MOCK_CAMERAS[selectedCamera].name}
-                                        </h3>
-                                        <button onClick={() => setSelectedCamera(null)} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest">Cerrar ✕</button>
-                                    </div>
-                                    <CameraFeed camera={MOCK_CAMERAS[selectedCamera]} expanded />
-
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        <MiniStat label="Modelo" value={MOCK_CAMERAS[selectedCamera].model} />
-                                        <MiniStat label="Resolución" value={MOCK_CAMERAS[selectedCamera].resolution} />
-                                        <MiniStat label="IA Activa" value={MOCK_CAMERAS[selectedCamera].ai} />
-                                        <MiniStat label="Temperatura" value={MOCK_CAMERAS[selectedCamera].temp} />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                {MOCK_CAMERAS.map((cam, i) => (
-                                    <CameraFeed key={cam.id} camera={cam} onExpand={() => setSelectedCamera(i)} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ═══════════ TAB: ESTADO DE SALUD ═══════════ */}
-                    {activeTab === 'health' && (
-                        <div className="space-y-8 animate-in fade-in duration-500">
-                            <h2 className="text-sm font-black uppercase tracking-[3px] text-slate-400">
-                                <Activity className="inline mr-2 text-primary" size={16} /> Diagnóstico del Sistema
-                            </h2>
-
-                            {/* NVR Status */}
-                            {MOCK_NVR.map((nvr, i) => (
-                                <div key={i} className="bg-slate-900/50 rounded-3xl border border-slate-800 p-8 space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <h3 className="font-black uppercase tracking-tight text-white">{nvr.name}</h3>
-                                            <p className="text-[10px] text-slate-500 font-bold">{nvr.model} • Canales: {nvr.channels}</p>
-                                        </div>
-                                        <span className="text-[8px] font-black uppercase px-3 py-1 rounded-full bg-green-500/10 text-green-500 border border-green-500/20">Operativo</span>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {nvr.hdd.map((hdd, j) => (
-                                            <div key={j} className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 space-y-3">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-xs font-bold flex items-center gap-2"><HardDrive size={14} className="text-blue-500" /> {hdd.name}</span>
-                                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${hdd.health === 'OK' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>{hdd.health}</span>
-                                                </div>
-                                                <div className="w-full bg-slate-700 rounded-full h-2">
-                                                    <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: hdd.used }}></div>
-                                                </div>
-                                                <p className="text-[10px] text-slate-500 font-medium">Uso: {hdd.used}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-
-                            {/* Camera Health Table */}
-                            <div className="bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden">
-                                <div className="p-6 border-b border-slate-800">
-                                    <h3 className="text-xs font-black uppercase tracking-[3px] text-slate-400">Diagnóstico por Cámara</h3>
-                                </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="text-[9px] uppercase font-black text-slate-500 tracking-[2px] bg-slate-900/80">
-                                                <th className="px-6 py-4">Cámara</th>
-                                                <th className="px-6 py-4">Modelo</th>
-                                                <th className="px-6 py-4">Estado</th>
-                                                <th className="px-6 py-4">Temp.</th>
-                                                <th className="px-6 py-4">Uptime</th>
-                                                <th className="px-6 py-4">Grab.</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-800/50">
-                                            {MOCK_CAMERAS.map(cam => (
-                                                <tr key={cam.id} className="hover:bg-white/[0.02] transition-colors">
-                                                    <td className="px-6 py-4">
-                                                        <p className="font-bold text-sm text-white">{cam.name}</p>
-                                                        <p className="text-[10px] text-slate-500">{cam.location}</p>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-[10px] font-mono text-slate-400">{cam.model}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${cam.status === 'online' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
-                                                            {cam.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-xs font-bold text-slate-300">{cam.temp}</td>
-                                                    <td className="px-6 py-4 text-[10px] text-slate-400 font-medium">{cam.uptime}</td>
-                                                    <td className="px-6 py-4">
-                                                        {cam.recording ? <CheckCircle2 size={16} className="text-green-500" /> : <Circle size={16} className="text-slate-700" />}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ═══════════ TAB: EVENTOS ═══════════ */}
-                    {activeTab === 'events' && (
-                        <div className="space-y-6 animate-in fade-in duration-500">
-                            <h2 className="text-sm font-black uppercase tracking-[3px] text-slate-400">
-                                <Clock className="inline mr-2 text-primary" size={16} /> Historial de Eventos
-                            </h2>
-                            <div className="bg-slate-900/50 rounded-3xl border border-slate-800 p-6 space-y-2">
-                                {MOCK_EVENTS.map((ev, i) => (
-                                    <EventRow key={i} {...ev} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ═══════════ TAB: CONFIGURACIÓN ═══════════ */}
-                    {activeTab === 'settings' && (
-                        <div className="max-w-2xl space-y-6 animate-in fade-in duration-500">
-                            <h2 className="text-sm font-black uppercase tracking-[3px] text-slate-400">
-                                <Settings className="inline mr-2 text-primary" size={16} /> Mi Configuración
-                            </h2>
-                            <div className="bg-slate-900/50 rounded-3xl border border-slate-800 p-8 space-y-6">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Nombre</label>
-                                        <input type="text" value={userName} readOnly className="w-full p-4 bg-slate-800/50 border border-slate-700 rounded-2xl text-sm text-white font-medium" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email</label>
-                                        <input type="text" value="cliente@demo.mx" readOnly className="w-full p-4 bg-slate-800/50 border border-slate-700 rounded-2xl text-sm text-white font-medium" />
-                                    </div>
-                                </div>
-                                <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
-                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Integración Hik-Connect</p>
-                                    <p className="text-[10px] text-slate-500">La conexión con Hik-Connect Teams se activará cuando las credenciales API sean aprobadas por Hikvision.</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                </div>
-            </main>
+  return (
+    <div className="flex h-screen bg-[#050505] text-slate-200 overflow-hidden font-sans">
+      
+      {/* Sidebar Personalizada */}
+      <aside className="w-64 bg-[#0a0a0a] border-r border-white/5 hidden md:flex flex-col">
+        <div className="p-6 border-b border-white/5">
+          <div className="flex items-center gap-2 text-primary font-bold text-lg">
+            <Shield fill="currentColor" size={24} className="text-primary" />
+            <span className="tracking-tighter text-white font-black">CORE <span className="text-primary">SYSTEMS</span></span>
+          </div>
         </div>
-    )
-}
+        
+        <nav className="flex-1 p-4 space-y-2">
+          <p className="text-[10px] font-bold text-slate-500 uppercase px-2 mb-4 tracking-widest">Menú Cliente</p>
+          <button 
+            onClick={() => setActiveTab('cameras')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all border ${activeTab === 'cameras' ? 'bg-blue-600/10 text-blue-400 border-blue-600/20' : 'text-slate-400 hover:bg-white/5 border-transparent'}`}
+          >
+            <LayoutGrid size={18} /> Mis Cámaras
+          </button>
+          <button 
+            onClick={() => setActiveTab('alerts')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all border ${activeTab === 'alerts' ? 'bg-blue-600/10 text-blue-400 border-blue-600/20' : 'text-slate-400 hover:bg-white/5 border-transparent'}`}
+          >
+            <Bell size={18} /> Alertas <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">3</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('users')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all border ${activeTab === 'users' ? 'bg-blue-600/10 text-blue-400 border-blue-600/20' : 'text-slate-400 hover:bg-white/5 border-transparent'}`}
+          >
+            <Users size={18} /> Usuarios App
+          </button>
+          <button 
+            onClick={() => setActiveTab('support')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all border ${activeTab === 'support' ? 'bg-blue-600/10 text-blue-400 border-blue-600/20' : 'text-slate-400 hover:bg-white/5 border-transparent'}`}
+          >
+            <Settings size={18} /> Soporte Técnico
+          </button>
+        </nav>
 
-// ─── Componentes ─────────────────────────────────────────────
-
-function SidebarItem({ icon, label, active, onClick, badge }: { icon: any, label: string, active: boolean, onClick: () => void, badge?: string }) {
-    return (
-        <div onClick={onClick} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 group ${active ? 'bg-primary text-white shadow-lg shadow-blue-900/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-            <div className="flex items-center gap-3">
-                {icon}
-                <span className="text-[11px] font-bold">{label}</span>
+        <div className="p-4 border-t border-white/5 bg-white/[0.02]">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center font-bold text-xs text-[#0F172A]">
+              {userName.substring(0,2).toUpperCase()}
             </div>
-            {badge && <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${active ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-500'}`}>{badge}</span>}
-        </div>
-    )
-}
-
-function StatCard({ icon, label, value, sub, color }: { icon: any, label: string, value: string, sub: string, color: string }) {
-    return (
-        <div className="bg-slate-900/50 border border-slate-800 p-5 rounded-2xl space-y-3 hover:border-slate-700 transition-colors">
-            <div className="flex items-center justify-between">
-                <div className="w-9 h-9 bg-slate-800 rounded-xl flex items-center justify-center">{icon}</div>
-                <Circle size={6} className={`fill-${color}-500 text-${color}-500 animate-pulse`} />
+            <div className="overflow-hidden text-xs">
+              <p className="font-bold truncate text-white">{userName}</p>
+              <p className="text-slate-500 truncate">{clientId}</p>
             </div>
-            <div>
-                <p className="text-[9px] uppercase font-black text-slate-500 tracking-widest">{label}</p>
-                <p className="text-xl font-black">{value}</p>
-            </div>
-            <p className="text-[10px] text-slate-500 font-medium">{sub}</p>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2 text-xs text-red-500 hover:bg-red-500/10 rounded-lg transition-all font-medium border border-transparent hover:border-red-500/20"
+          >
+            <LogOut size={14} /> Cerrar Sesión
+          </button>
         </div>
-    )
-}
+      </aside>
 
-function CameraFeed({ camera, onExpand, expanded }: { camera: typeof MOCK_CAMERAS[0], onExpand?: () => void, expanded?: boolean }) {
-    const isOffline = camera.status === 'offline'
+      {/* Contenido Principal */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        
+        {/* Header Superior */}
+        <header className="h-16 border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-xl flex items-center justify-between px-8">
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-slate-500">Dashboard</span>
+            <ChevronRight size={14} className="text-slate-700" />
+            <span className="text-white font-medium">Vista de Cámaras en Vivo</span>
+          </div>
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Conexión Segura</span>
+             </div>
+             <Globe size={18} className="text-slate-500" />
+          </div>
+        </header>
 
-    return (
-        <div
-            onClick={onExpand}
-            className={`${expanded ? 'aspect-[21/9]' : 'aspect-video'} rounded-2xl border overflow-hidden relative group cursor-pointer transition-all shadow-xl ${isOffline ? 'bg-slate-900 border-red-500/20' : 'bg-slate-900 border-slate-800 hover:border-primary/30'}`}
-        >
-            {/* Simulated camera feed with gradient noise */}
-            {isOffline ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 gap-3">
-                    <AlertTriangle size={32} className="text-red-500/50" />
-                    <p className="text-[10px] font-black uppercase text-red-500/50 tracking-widest">Sin Señal</p>
-                </div>
-            ) : (
-                <>
-                    <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950"></div>
-                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 30% 40%, rgba(59,130,246,0.15) 0%, transparent 60%), radial-gradient(circle at 70% 60%, rgba(59,130,246,0.1) 0%, transparent 50%)' }}></div>
+        {activeTab === 'cameras' && (
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold text-white mb-2 underline decoration-primary decoration-4 underline-offset-8">Hola, {userName.split(' ')[0]}</h1>
+              <p className="text-slate-400 text-sm">Sistemas operativos bajo supervisión técnica de Core.</p>
+            </div>
 
-                    {/* Simulated camera overlay elements */}
-                    <div className="absolute top-3 left-3 flex items-center gap-2">
-                        <span className="text-[8px] font-mono text-white/60 bg-black/40 px-2 py-0.5 rounded">{camera.model}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {cameras.map((camera) => (
+                <div 
+                  key={camera.id}
+                  className="group relative bg-[#111111] border border-white/5 rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 shadow-2xl scale-shadow hover:border-glow cursor-pointer"
+                  onClick={() => setSelectedCam(camera)}
+                >
+                  {/* Imagen de la cámara */}
+                  <div className="aspect-video relative overflow-hidden">
+                    <img 
+                      src={camera.url.includes('?') ? `${camera.url}&t=${refreshKey}` : `${camera.url}?t=${refreshKey}`} 
+                      alt={camera.name} 
+                      className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${camera.status === 'offline' ? 'grayscale opacity-30' : ''}`} 
+                    />
+                    
+                    {/* Overlay Gradiente */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    
+                    {/* Status Tags */}
+                    <div className="absolute top-4 left-4 flex gap-2">
+                      <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${camera.status === 'online' ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                        {camera.status}
+                      </span>
+                      <span className="bg-black/50 backdrop-blur-md px-2 py-1 rounded-md text-[10px] text-white/70 font-mono border border-white/10">
+                        {camera.type}
+                      </span>
                     </div>
-                    <div className="absolute top-3 right-3 flex items-center gap-2">
-                        <span className="text-[8px] font-mono text-white/40">{new Date().toLocaleTimeString('es-MX')}</span>
+
+                    <div className="absolute bottom-4 left-4">
+                      <h3 className="text-white font-bold text-sm group-hover:text-primary transition-colors drop-shadow-md">{camera.name}</h3>
+                      <p className="text-[10px] text-slate-300 opacity-80 drop-shadow-md">NODO ACTIVO | IP PROXY</p>
                     </div>
 
-                    {/* Center crosshair */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                        <div className="w-16 h-16 border border-white/30 rounded-sm"></div>
-                        <div className="absolute w-px h-6 bg-white/20 top-1/2 -translate-y-1/2"></div>
-                        <div className="absolute h-px w-6 bg-white/20 left-1/2 -translate-x-1/2"></div>
-                    </div>
-
-                    {/* Hover play overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-2xl">
-                            <Maximize2 size={20} className="text-white" />
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {/* Bottom info bar */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                            {!isOffline && <Circle size={6} className="fill-red-500 text-red-500 animate-pulse" />}
-                            <span className="text-[8px] font-black uppercase text-white/80 tracking-[2px]">{isOffline ? 'Desconectada' : 'En Vivo'}</span>
-                            {camera.recording && <span className="text-[7px] font-black bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded uppercase">REC</span>}
-                        </div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">{camera.name}</h4>
-                        <p className="text-[9px] text-slate-400 font-medium flex items-center gap-1"><MapPin size={9} /> {camera.location}</p>
-                    </div>
-                    {!isOffline && (
-                        <div className="flex gap-1.5">
-                            <div className="text-[7px] font-black bg-blue-500/10 text-blue-400 px-2 py-1 rounded border border-blue-500/20 uppercase">{camera.resolution}</div>
-                            {camera.ai !== 'Ninguna' && <div className="text-[7px] font-black bg-purple-500/10 text-purple-400 px-2 py-1 rounded border border-purple-500/20 uppercase">{camera.ai}</div>}
-                        </div>
+                    {camera.status === 'offline' && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
+                        <Lock size={24} className="text-slate-400" />
+                        <span className="text-xs text-slate-300 font-medium">Se requiere reconexión</span>
+                      </div>
                     )}
+
+                    <button className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 p-2 bg-black/50 backdrop-blur-md hover:bg-primary rounded-lg transition-all transform scale-90 group-hover:scale-100 border border-white/10">
+                      <Camera size={16} className="text-white" />
+                    </button>
+                  </div>
                 </div>
+              ))}
             </div>
-        </div>
-    )
-}
+          </div>
+        )}
 
-function MiniStat({ label, value }: { label: string, value: string }) {
-    return (
-        <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
-            <p className="text-[8px] uppercase font-black text-slate-500 tracking-widest mb-1">{label}</p>
-            <p className="text-xs font-bold text-white">{value}</p>
-        </div>
-    )
-}
+        {/* --- Pestaña: Alertas --- */}
+        {activeTab === 'alerts' && (
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold text-white mb-2">Centro de <span className="text-blue-500">Alertas</span></h1>
+              <p className="text-slate-400 text-sm">Registro de detecciones y eventos del sistema analítico.</p>
+            </div>
 
-function EventRow({ time, event, location, type, detail }: { time: string, event: string, location: string, type: string, detail?: string }) {
-    const colors: Record<string, string> = {
-        warning: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-        success: 'bg-green-500/10 text-green-500 border-green-500/20',
-        info: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-        danger: 'bg-red-500/10 text-red-500 border-red-500/20',
-    }
-
-    return (
-        <div className="flex items-center justify-between p-3 rounded-xl hover:bg-white/[0.02] transition-colors border border-transparent hover:border-slate-800 gap-4">
-            <div className="flex items-center gap-4 min-w-0">
-                <span className="text-[10px] font-mono text-slate-600 w-10 shrink-0">{time}</span>
-                <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-tight text-white truncate">{event}</p>
-                    <p className="text-[9px] text-slate-500 font-medium truncate">{location}{detail ? ` • ${detail}` : ''}</p>
+            <div className="max-w-3xl space-y-4">
+              {[
+                { time: 'Hace 10 min', type: 'Movimiento Sospechoso', cam: 'Acceso Principal', color: 'orange' },
+                { time: 'Hace 2 horas', type: 'Cruce de Línea', cam: 'Estacionamiento Sur', color: 'red' },
+                { time: 'Ayer, 23:40', type: 'Vehículo Desconocido', cam: 'Acceso Principal', color: 'blue' }
+              ].map((alert, i) => (
+                <div key={i} className="flex items-start gap-4 p-4 bg-[#111] border border-white/5 rounded-2xl hover:bg-white/[0.02] transition-colors">
+                  <div className={`mt-1 w-8 h-8 rounded-full bg-${alert.color}-500/20 text-${alert.color}-500 flex items-center justify-center`}>
+                    <AlertTriangle size={16} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-200 text-sm">{alert.type}</h4>
+                    <p className="text-xs text-slate-500 font-medium mt-1">Cámara: <span className="text-slate-400">{alert.cam}</span></p>
+                    <p className="text-[10px] text-slate-500 mt-2 font-mono">{alert.time}</p>
+                  </div>
+                  <button className="ml-auto px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors">
+                    Ver Clip
+                  </button>
                 </div>
+              ))}
             </div>
-            <span className={`text-[7px] font-black uppercase px-2 py-1 rounded-full border shrink-0 ${colors[type] || colors.info}`}>
-                {type}
-            </span>
+          </div>
+        )}
+
+        {/* --- Pestaña: Usuarios --- */}
+        {activeTab === 'users' && (
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div className="mb-8 flex justify-between items-end">
+              <div>
+                <h1 className="text-2xl font-bold text-white mb-2">Permisos y <span className="text-blue-500">Accesos</span></h1>
+                <p className="text-slate-400 text-sm">Administra quién puede ver tus cámaras en la App Móvil.</p>
+              </div>
+              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase rounded-xl transition-all shadow-lg hover:shadow-blue-500/20">
+                <UserPlus size={16} /> Invitar Usuario
+              </button>
+            </div>
+
+            <div className="max-w-3xl bg-[#111] border border-white/5 rounded-2xl overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-black/40 text-slate-500 text-[10px] uppercase font-bold tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">Usuario</th>
+                    <th className="px-6 py-4">Rol</th>
+                    <th className="px-6 py-4">Estado</th>
+                    <th className="px-6 py-4 text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  <tr className="bg-white/[0.02]">
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-white">{userName}</p>
+                      <p className="text-xs text-slate-500">{clientId}</p>
+                    </td>
+                    <td className="px-6 py-4"><span className="text-xs font-medium text-blue-400">Propietario</span></td>
+                    <td className="px-6 py-4"><span className="w-2 h-2 rounded-full bg-green-500 inline-block mr-2"></span>Activo</td>
+                    <td className="px-6 py-4 text-right"></td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-slate-300">Guardia Turno Nocturno</p>
+                      <p className="text-xs text-slate-500">Invitado hace 2 días</p>
+                    </td>
+                    <td className="px-6 py-4"><span className="text-xs font-medium text-slate-400">Sólo Vista</span></td>
+                    <td className="px-6 py-4"><span className="w-2 h-2 rounded-full bg-orange-500 inline-block mr-2"></span>Pendiente</td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="text-xs text-red-400 font-medium hover:text-red-300">Revocar</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* --- Pestaña: Soporte --- */}
+        {activeTab === 'support' && (
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold text-white mb-2">Centro de <span className="text-blue-500">Resolución</span></h1>
+              <p className="text-slate-400 text-sm">Levanta un ticket directamente a nuestros técnicos.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Formulario de Ticket */}
+              <div className="bg-[#111] p-6 border border-white/5 rounded-2xl">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-slate-300 mb-6 flex items-center gap-2"><Send size={16} className="text-blue-500"/> Abrir Ticket Nuevo</h3>
+                
+                <form className="space-y-4" onSubmit={e => { e.preventDefault(); alert("Ticket enviado a soporte!"); setSupportMsg(''); }}>
+                  <div>
+                    <label className="text-xs text-slate-500 font-medium mb-1 block">Asunto</label>
+                    <input type="text" required placeholder="Ej. Falla en cámara 2" className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-blue-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 font-medium mb-1 block">Descripción del problema</label>
+                    <textarea required value={supportMsg} onChange={e => setSupportMsg(e.target.value)} rows={4} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 focus:outline-none resize-none" placeholder="Describe lo que sucede..."></textarea>
+                  </div>
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-3 rounded-xl transition-all shadow-lg hover:shadow-blue-500/20">
+                    Enviar a Central
+                  </button>
+                </form>
+              </div>
+
+              {/* Status de Cuenta y Manuales */}
+              <div className="space-y-6">
+                <div className="bg-[#111] p-6 border border-white/5 rounded-2xl">
+                   <h3 className="text-sm font-bold uppercase tracking-widest text-slate-300 mb-4 flex items-center gap-2"><Shield size={16} className="text-green-500"/> Póliza de Servicio</h3>
+                   <div className="flex justify-between items-center py-2 border-b border-white/5">
+                      <span className="text-sm text-slate-400">Estado</span>
+                      <span className="text-sm font-bold text-green-400">Vigente (Premium)</span>
+                   </div>
+                   <div className="flex justify-between items-center py-2 border-b border-white/5">
+                      <span className="text-sm text-slate-400">Mantenimiento Prox.</span>
+                      <span className="text-sm font-bold text-white">15 Dic, 2026</span>
+                   </div>
+                   <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-slate-400">Atención Garantizada</span>
+                      <span className="text-sm font-bold text-white">4 horas (SLA)</span>
+                   </div>
+                </div>
+
+                <button className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl transition-all group">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg">
+                      <FileText size={18} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">Manual de Usuario</p>
+                      <p className="text-xs text-slate-500">Aprende a usar tu app</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-slate-600" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Banner de Marca Blanca */}
+        <div className="p-4 bg-[#0a0a0a] border-t border-white/5 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+          <span className="text-primary">Soporte Técnico 24/7:</span> +52 800-GLOBAL-TEC &nbsp;|&nbsp; Soluciones por <span className="text-white">Global Telecomunicaciones Digitales</span>
         </div>
-    )
+      </main>
+
+      {/* Modal de Cámara Expandida */}
+      {selectedCam && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/95 backdrop-blur-md">
+          <div className="bg-[#0f0f0f] border border-white/10 w-full max-w-4xl rounded-3xl overflow-hidden relative shadow-2xl">
+            <button 
+              onClick={() => setSelectedCam(null)}
+              className="absolute top-4 right-4 z-10 px-4 py-2 bg-black/50 backdrop-blur hover:bg-red-500/20 hover:text-red-400 rounded-full text-white text-xs font-bold transition-all border border-white/10"
+            >
+              Cerrar Vista
+            </button>
+            <div className="aspect-video bg-black flex items-center justify-center relative overflow-hidden group">
+              <img src={selectedCam.url.includes('?') ? `${selectedCam.url}&t=${refreshKey}` : `${selectedCam.url}?t=${refreshKey}`} className="w-full h-full object-contain" alt={selectedCam.name} />
+              <div className="absolute inset-0 bg-blue-500/5 mix-blend-overlay pointer-events-none" />
+              
+              {/* OSD (On Screen Display) Típico de cámara */}
+              <div className="absolute top-4 left-4 text-white/70 font-mono text-xs drop-shadow-md pointer-events-none">
+                {selectedCam.name.toUpperCase()} - CAM 0{selectedCam.id}
+              </div>
+              <div className="absolute top-4 right-4 text-white/70 font-mono text-xs drop-shadow-md pointer-events-none pr-24">
+                {new Date().toLocaleString('es-MX')}
+              </div>
+            </div>
+            
+            <div className="p-6 flex justify-between items-center border-t border-white/5 bg-[#0a0a0a]">
+              <div>
+                <h2 className="text-xl font-bold text-white">{selectedCam.name}</h2>
+                <p className="text-xs text-slate-400 flex items-center gap-2 mt-1">
+                   <Shield size={12} className="text-green-500" /> 
+                   Túnel Proxy Seguro (ISAPI)
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-bold text-white transition-all shadow-lg shadow-blue-500/20">
+                  Ver Grabaciones
+                </button>
+                <button className="px-5 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl text-sm font-bold text-slate-300 transition-all">
+                  Opciones PTZ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

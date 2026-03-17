@@ -1,5 +1,6 @@
 export interface SyscomProduct {
     producto_id: string;
+    id?: string;
     modelo: string;
     total_existencia: number;
     titulo: string;
@@ -7,6 +8,9 @@ export interface SyscomProduct {
     sat_key: string;
     img_portada: string;
     precio: string;
+    precio_cliente?: string;
+    precios?: { precio_1?: string };
+    moneda?: string;
 }
 
 export async function getSyscomAccessToken() {

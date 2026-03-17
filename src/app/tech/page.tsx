@@ -12,18 +12,15 @@ import {
     CheckCircle,
     Clock,
     Camera,
-    ArrowRight,
-    MessageSquare,
     X,
-    Layout,
     Activity,
-    Eye
+    Server,
+    Wifi
 } from 'lucide-react'
-import { withAuth } from '@/hoc/withAuth'
+import { supabase } from '@/lib/supabase'
 
 // ─── Tipos y Mocks ───────────────────────────────────────────
 
-type Branch = { id: string; name: string; address: string; phone: string; cameras: number }
 type WorkOrder = {
     id: string;
     client: string;
@@ -35,6 +32,9 @@ type WorkOrder = {
     type: 'Levantamiento' | 'Instalación';
     instructions?: string[];
 }
+
+type ProfileSubset = { id: string; full_name: string | null; email: string; }
+type ClientDeviceRow = { id: string; user_id: string; camera_name: string; device_type: string; url_or_ip: string; port_http: number; port_rtsp: number; username: string; password_enc: string; channel_id: number; is_active: boolean; created_at: string; profiles?: { full_name?: string; email?: string } }
 
 const MOCK_TECH_ORDERS: WorkOrder[] = [
     {
@@ -70,29 +70,134 @@ const MOCK_TECH_ORDERS: WorkOrder[] = [
     },
 ]
 
+type TechUser = {
+    id: string;
+    name: string;
+    email?: string;
+}
+
 function TechPortal() {
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<TechUser | null>(null)
     const [orders, setOrders] = useState<WorkOrder[]>(MOCK_TECH_ORDERS)
-    const [activeTab, setActiveTab] = useState<'misiones' | 'perfil'>('misiones')
+    const [activeTab, setActiveTab] = useState<'misiones' | 'camaras' | 'perfil'>('misiones')
     const [showMonitor, setShowMonitor] = useState<WorkOrder | null>(null)
+    const [clients, setClients] = useState<ProfileSubset[]>([])
+    const [cameras, setCameras] = useState<ClientDeviceRow[]>([])
+    const [loading, setLoading] = useState(true)
+    const [isCreatingCam, setIsCreatingCam] = useState(false)
+    const [newCam, setNewCam] = useState({
+        user_id: '',
+        camera_name: '',
+        device_type: 'NVR',
+        url_or_ip: '',
+        port_http: 80,
+        port_rtsp: 554,
+        username: 'admin',
+        password_enc: '',
+        channel_id: 101,
+    })
     const router = useRouter()
 
     useEffect(() => {
-        const savedUser = localStorage.getItem('gt_user')
-        if (!savedUser) {
-            router.push('/login')
-            return
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('full_name, role')
+                    .eq('id', user.id)
+                    .single()
+                
+                if (profile?.role !== 'tech') {
+                    router.push('/login')
+                } else {
+                    setUser({ 
+                        id: user.id, 
+                        name: profile.full_name || 'Técnico', 
+                        email: user.email || '' 
+                    })
+                }
+            } else {
+                router.push('/login')
+            }
         }
-        const parsed = JSON.parse(savedUser)
-        if (parsed.role !== 'tech') {
-            router.push('/login')
-            return
+        
+        const fetchClientsAndCameras = async () => {
+            setLoading(true)
+            // Fetch clients
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, full_name, email')
+                .eq('role', 'client')
+            setClients(profiles || [])
+
+            // Fetch cameras
+            const { data: cams } = await supabase
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .from('client_devices' as any)
+                .select('*, profiles(full_name)')
+                .order('created_at', { ascending: false })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setCameras((cams as any[]) || [])
+            setLoading(false)
         }
-        setUser(parsed)
+
+        fetchUser()
+        fetchClientsAndCameras()
     }, [router])
 
-    const handleLogout = () => {
-        localStorage.removeItem('gt_user')
+    const handleCreateCamera = async (e: React.FormEvent) => {
+        e.preventDefault()
+        try {
+            const { error } = await supabase
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .from('client_devices' as any)
+                .insert([newCam])
+
+            if (error) throw error
+            
+            setIsCreatingCam(false)
+            setNewCam({
+                user_id: '',
+                camera_name: '',
+                device_type: 'NVR',
+                url_or_ip: '',
+                port_http: 80,
+                port_rtsp: 554,
+                username: 'admin',
+                password_enc: '',
+                channel_id: 101,
+            })
+
+            // Refresh list
+            const { data: cams } = await supabase
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .from('client_devices' as any)
+                .select('*, profiles(full_name)')
+                .order('created_at', { ascending: false })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setCameras((cams as any[]) || [])
+            
+        } catch (err: unknown) {
+            alert('Error: ' + (err instanceof Error ? err.message : 'Unknown error'))
+        }
+    }
+
+    const deleteCam = async (id: string) => {
+        if (!confirm('¿Seguro que deseas eliminar este vínculo?')) return
+        const { error } = await supabase
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .from('client_devices' as any)
+                .delete()
+                .eq('id', id)
+        
+        if (!error) {
+            setCameras(prev => prev.filter(c => c.id !== id))
+        }
+    }
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut()
         router.push('/login')
     }
 
@@ -133,6 +238,12 @@ function TechPortal() {
                         <ClipboardList size={18} /> Misiones
                     </button>
                     <button
+                        onClick={() => setActiveTab('camaras')}
+                        className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === 'camaras' ? 'bg-primary text-white shadow-lg shadow-blue-900/30 font-black italic' : 'text-slate-500 hover:bg-white/5 uppercase font-bold text-[10px] tracking-widest'}`}
+                    >
+                        <Server size={18} /> Config. NVR
+                    </button>
+                    <button
                         onClick={() => setActiveTab('perfil')}
                         className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === 'perfil' ? 'bg-primary text-white shadow-lg shadow-blue-900/30 font-black italic' : 'text-slate-500 hover:bg-white/5 uppercase font-bold text-[10px] tracking-widest'}`}
                     >
@@ -151,7 +262,7 @@ function TechPortal() {
                     <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                         <div className="space-y-2">
                             <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-                                {activeTab === 'misiones' ? 'Tablero' : 'Expediente'} <span className="text-primary underline underline-offset-8">Táctico</span>
+                                {activeTab === 'misiones' ? 'Tablero' : activeTab === 'camaras' ? 'Infraestructura' : 'Expediente'} <span className="text-primary underline underline-offset-8">Táctico</span>
                             </h1>
                             <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Unidad Operativa ID: GT-TECH-001</p>
                         </div>
@@ -243,6 +354,106 @@ function TechPortal() {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    ) : activeTab === 'camaras' ? (
+                        <div className="space-y-10 animate-in fade-in duration-500">
+                             <div className="flex justify-between items-center">
+                                <h2 className="text-sm font-black uppercase tracking-[3px] text-slate-400">Despliegue de Hardware en Sitio</h2>
+                                <button
+                                    onClick={() => setIsCreatingCam(!isCreatingCam)}
+                                    className="px-6 py-2 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-blue-900/40"
+                                >
+                                    {isCreatingCam ? 'Cerrar Protocolo' : '+ Enlazar NVR/DVR'}
+                                </button>
+                            </div>
+
+                            {isCreatingCam && (
+                                <form onSubmit={handleCreateCamera} className="glass p-8 rounded-[32px] border-white/5 space-y-6">
+                                    <h3 className="text-lg font-black uppercase italic text-white flex items-center gap-2">Configuración de Nueva Terminal</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Asignar a Cliente</label>
+                                            <select required value={newCam.user_id} onChange={e => setNewCam({ ...newCam, user_id: e.target.value })} className="w-full p-3 rounded-xl bg-slate-900 border border-white/10 text-white font-medium text-sm">
+                                                <option value="" disabled>Seleccione Cliente Propietario</option>
+                                                {clients.map(c => (
+                                                    <option key={c.id} value={c.id}>{c.full_name || c.email}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Etiqueta de Identificación</label>
+                                            <input type="text" required value={newCam.camera_name} onChange={e => setNewCam({ ...newCam, camera_name: e.target.value })} className="w-full p-3 rounded-xl bg-slate-900 border border-white/10 text-white font-medium text-sm" placeholder="Ej: DVR Local Principal" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">IP Pública / DDNS</label>
+                                            <input type="text" required value={newCam.url_or_ip} onChange={e => setNewCam({ ...newCam, url_or_ip: e.target.value })} className="w-full p-3 rounded-xl bg-slate-900 border border-white/10 text-white font-medium text-sm" placeholder="ej: mipyme.ddns.net" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tipo de Dispositivo</label>
+                                            <select value={newCam.device_type} onChange={e => setNewCam({ ...newCam, device_type: e.target.value })} className="w-full p-3 rounded-xl bg-slate-900 border border-white/10 text-white font-medium text-sm">
+                                                <option value="NVR">NVR (IP)</option>
+                                                <option value="DVR">DVR (Analógico)</option>
+                                                <option value="CAM">Cámara Independiente</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Puerto HTTP</label>
+                                            <input type="number" required value={newCam.port_http} onChange={e => setNewCam({ ...newCam, port_http: Number(e.target.value) })} className="w-full p-3 rounded-xl bg-slate-900 border border-white/10 text-white font-medium text-sm" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Contraseña Acceso</label>
+                                            <input type="password" required value={newCam.password_enc} onChange={e => setNewCam({ ...newCam, password_enc: e.target.value })} className="w-full p-3 rounded-xl bg-slate-900 border border-white/10 text-white font-medium text-sm" placeholder="••••••••" />
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="w-full py-4 bg-primary text-white rounded-xl font-black uppercase tracking-widest hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+                                        <Wifi size={16} /> Establecer Vínculo Seguro
+                                    </button>
+                                </form>
+                            )}
+
+                            <div className="glass rounded-[40px] border-white/5 overflow-hidden shadow-2xl">
+                                <div className="overflow-x-auto min-h-[300px]">
+                                    {cameras.length === 0 ? (
+                                        <div className="p-20 text-center text-slate-500 italic uppercase font-black text-[10px] tracking-widest">No hay periféricos registrados en su unidad.</div>
+                                    ) : (
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="text-[9px] uppercase font-black text-slate-500 bg-black/20 tracking-[2px]">
+                                                    <th className="px-8 py-5">Propietario</th>
+                                                    <th className="px-8 py-5">Equipo</th>
+                                                    <th className="px-8 py-5">Direccionamiento</th>
+                                                    <th className="px-8 py-5 text-right">Mantenimiento</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5">
+                                                {cameras.map((cam) => (
+                                                    <tr key={cam.id} className="hover:bg-white/[0.02] transition-colors group">
+                                                        <td className="px-8 py-6">
+                                                            <p className="font-black italic text-sm">{cam.profiles?.full_name || 'Desconocido'}</p>
+                                                            <p className="text-[9px] text-slate-500 uppercase">{cam.profiles?.email}</p>
+                                                        </td>
+                                                        <td className="px-8 py-6">
+                                                            <div className="text-[11px] font-medium text-white">{cam.camera_name}</div>
+                                                            <div className="text-[9px] font-black text-primary uppercase tracking-widest mt-1 opacity-70 underline">{cam.device_type}</div>
+                                                        </td>
+                                                        <td className="px-8 py-6">
+                                                            <div className="text-[11px] font-mono text-slate-400">{cam.url_or_ip}:{cam.port_http}</div>
+                                                        </td>
+                                                        <td className="px-8 py-6 text-right">
+                                                            <button
+                                                                onClick={() => deleteCam(cam.id)}
+                                                                className="text-[9px] uppercase font-black px-4 py-2 bg-red-600/10 text-red-500 rounded-lg hover:bg-red-600 hover:text-white transition-all"
+                                                            >
+                                                                Eliminar Sincronía
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="glass rounded-[40px] border-white/5 p-12 text-center space-y-8">
@@ -338,4 +549,4 @@ function CameraCell({ id, label, bitrate, image }: { id: string, label: string, 
     )
 }
 
-export default withAuth(TechPortal)
+export default TechPortal

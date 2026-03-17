@@ -5,11 +5,11 @@ import { ReactNode } from 'react'
 export function SidebarItem({ icon, label, active = false, onClick }: { icon: ReactNode, label: string, active?: boolean, onClick: () => void }) {
     return (
         <div onClick={onClick} className={`flex items-center gap-4 px-6 py-4 rounded-2xl cursor-pointer group transition-all duration-500 ${active ? 'glass border-primary/20 bg-primary/5 text-primary' : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'}`}>
-            <div className={`transition-transform duration-500 group-hover:scale-110 ${active ? 'text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]' : ''}`}>
+            <div className={`transition-transform duration-500 group-hover:scale-110 ${active ? 'text-primary drop-shadow-[0_0_8px_rgba(197,160,89,0.4)]' : ''}`}>
                 {icon}
             </div>
             <span className={`text-[11px] font-black uppercase tracking-widest ${active ? 'italic' : ''}`}>{label}</span>
-            {active && <div className="ml-auto w-1.5 h-1.5 bg-primary rounded-full shadow-glow"></div>}
+            {active && <div className="ml-auto w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_10px_rgba(197,160,89,0.5)]"></div>}
         </div>
     )
 }
@@ -36,7 +36,7 @@ export function TeamStat({ name, score, tasks, color }: { name: string, score: n
                 <span className="text-[10px] font-mono text-primary">{score}% Performance</span>
             </div>
             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                <div className={`h-full ${color} transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.2)]`} style={{ width: `${score}%` }}></div>
+                <div className={`h-full ${color} transition-all duration-1000 shadow-[0_0_10px_rgba(197,160,89,0.2)]`} style={{ width: `${score}%` }}></div>
             </div>
             <p className="text-[8px] font-black uppercase text-slate-600 tracking-widest">{tasks} Misiones Completadas</p>
         </div>

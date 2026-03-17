@@ -1,25 +1,32 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import { supabase } from '@/lib/supabase'
+import { PostgrestError } from '@supabase/supabase-js'
 import { ArrowRight } from 'lucide-react'
+import { Database } from '@/lib/database.types'
 
-export default function TasksView({ addNotification }: { addNotification: any }) {
-    const [tasks, setTasks] = useState<any[]>([])
+type Task = Database['public']['Tables']['tasks']['Row']
+
+export default function TasksView({ addNotification }: { addNotification: (message: string, type: string) => void }) {
+    const [tasks, setTasks] = useState<Task[]>([])
     const [newTask, setNewTask] = useState({ title: '', priority: 'media', due_date: '' })
-    const [loading, setLoading] = useState(true)
+
+    const fetchTasks = async () => {
+        const { data, error } = await supabase.from('tasks').select('*').order('due_date', { ascending: true }) as { data: Task[] | null, error: PostgrestError | null }
+        if (error) {
+            console.error(error)
+            return
+        }
+        if (data) setTasks(data as Task[])
+    }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchTasks()
     }, [])
 
-    const fetchTasks = async () => {
-        const { data } = await supabase.from('tasks').select('*').order('due_date', { ascending: true })
-        if (data) setTasks(data)
-        setLoading(false)
-    }
-
-    const handleAddTask = async (e: any) => {
+    const handleAddTask = async (e: FormEvent) => {
         e.preventDefault()
         if (!newTask.title) return
         const { data, error } = await supabase.from('tasks').insert([{
@@ -28,9 +35,14 @@ export default function TasksView({ addNotification }: { addNotification: any })
             due_date: newTask.due_date || new Date().toISOString(),
             status: 'pendiente',
             reminder_sent: false
-        }]).select()
+        }]).select() as { data: Task[] | null, error: PostgrestError | null }
 
-        if (data) {
+        if (error) {
+            console.error(error)
+            return
+        }
+
+        if (data && data.length > 0) {
             setTasks([data[0], ...tasks])
             setNewTask({ title: '', priority: 'media', due_date: '' })
             addNotification(`TAREA "${newTask.title.toUpperCase()}" REGISTRADA`, 'success')
@@ -40,12 +52,12 @@ export default function TasksView({ addNotification }: { addNotification: any })
         }
     }
 
-    const toggleTask = async (task: any) => {
+    const toggleTask = async (task: Task) => {
         const states = ['pendiente', 'en_proceso', 'completada']
-        const currentIndex = states.indexOf(task.status)
+        const currentIndex = states.indexOf(task.status ?? 'pendiente')
         const nextStatus = states[(currentIndex + 1) % states.length]
 
-        const { error } = await supabase.from('tasks').update({ status: nextStatus }).eq('id', task.id)
+        const { error } = await supabase.from('tasks').update({ status: nextStatus }).eq('id', task.id) as { error: PostgrestError | null }
         if (!error) {
             setTasks(tasks.map(t => t.id === task.id ? { ...t, status: nextStatus } : t))
             addNotification(`Tarea "${task.title.toUpperCase()}" movida a ${nextStatus.replace('_', ' ').toUpperCase()}`, 'info')

@@ -1,9 +1,10 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { Shield, X, Layout, Zap, Activity } from 'lucide-react'
 
-export default function MonitoringSystem({ branch, client, onClose }: { branch: any, client: string, onClose: () => void }) {
+export default function MonitoringSystem({ branch, client, onClose }: { branch: { name: string }, client: string, onClose: () => void }) {
     const [currentTime, setCurrentTime] = useState(new Date())
 
     useEffect(() => {
@@ -16,7 +17,14 @@ export default function MonitoringSystem({ branch, client, onClose }: { branch: 
             <header className="h-16 bg-slate-900 border-b border-white/10 flex items-center justify-between px-8 shrink-0">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary rounded flex items-center justify-center"><Shield size={14} /></div>
+                        <div className="w-8 h-8 relative">
+                            <Image 
+                                src="/logo-global.png" 
+                                alt="Global Telecomunicaciones Digitales Logo" 
+                                fill
+                                className="object-contain drop-shadow-glow"
+                            />
+                        </div>
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-widest leading-none text-white">Security Center</p>
                             <p className="text-[8px] font-bold text-slate-500 uppercase tracking-[2px] mt-1">v4.2.0.1009 Enterprise</p>
@@ -61,11 +69,16 @@ function CameraCell({ id, label, bitrate, image }: { id: string, label: string, 
         <div className="relative bg-[#050505] group overflow-hidden border border-white/[0.02] min-h-[300px]">
             {image ? (
                 <div className="absolute inset-0 grayscale contrast-125 brightness-75 group-hover:brightness-100 transition-all duration-700">
-                    <img src={image} alt={label} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
-                    <div className="absolute inset-0 bg-blue-900/10 mix-blend-overlay"></div>
+                    <Image 
+                        src={image} 
+                        alt={label} 
+                        fill
+                        className="object-cover opacity-60 group-hover:opacity-80 transition-opacity" 
+                    />
+                    <div className="absolute inset-0 bg-primary/5 mix-blend-overlay"></div>
                 </div>
             ) : (
-                <div className="absolute inset-0 opacity-20 bg-gradient-to-br from-primary/10 via-transparent to-blue-900/10 flex items-center justify-center">
+                <div className="absolute inset-0 opacity-20 bg-gradient-to-br from-primary/10 via-transparent to-primary/5 flex items-center justify-center">
                     <Shield size={60} className="text-white/[0.03] group-hover:text-primary transition-all duration-700" />
                 </div>
             )}
