@@ -348,7 +348,7 @@ export default function AdminDashboard() {
 
                 <div className="p-6 border-t border-slate-800">
                     <Link href="/" className="text-[10px] font-black text-slate-500 hover:text-white flex items-center gap-2 uppercase tracking-widest">
-                        <ChevronRight size={14} className="rotate-180" /> Home Global Telecomunicaciones Digitales
+                        <ChevronRight size={14} className="rotate-180" /> Home Global++
                     </Link>
                 </div>
             </aside>

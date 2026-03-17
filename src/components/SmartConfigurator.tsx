@@ -96,7 +96,7 @@ export default function SmartConfigurator() {
         doc.setTextColor(255, 255, 255)
         doc.setFontSize(22)
         doc.setFont('helvetica', 'bold')
-        doc.text('GLOBAL TELECOMUNICACIONES', 20, 20)
+        doc.text('GLOBAL++', 20, 20)
         doc.setFontSize(10)
         doc.text('INGENIERÍA DIGITAL Y VIDEOVIGILANCIA INTELIGENTE', 20, 28)
 
@@ -151,7 +151,7 @@ export default function SmartConfigurator() {
         doc.setFontSize(8)
         doc.setFont('helvetica', 'normal')
         doc.text('* Precios sujetos a cambios. Requiere levantamiento físico para confirmación.', 20, finalY + 15)
-        doc.text('Global Telecomunicaciones Digitales S.A. de C.V. | Proyectos Especiales', 105, 285, { align: 'center' })
+        doc.text('Global++ S.A. de C.V. | Proyectos Especiales', 105, 285, { align: 'center' })
 
         doc.save(`Cotizacion_GlobalTech_${config.name.replace(/\s+/g, '_')}.pdf`)
     }
@@ -451,7 +451,7 @@ export default function SmartConfigurator() {
                             </div>
                             <h3 className="text-3xl font-black uppercase tracking-tighter text-white">¡Configuración Exitosa!</h3>
                             <p className="text-slate-400 max-w-lg mx-auto font-medium">
-                                Hemos recibido los parámetros de su diseño. Un ingeniero de Global Tech validará la viabilidad técnica y disponibilidad de inventario.
+                                Hemos recibido los parámetros de su diseño. Un ingeniero de Global++ validará la viabilidad técnica y disponibilidad de inventario.
                             </p>
                         </div>
 
@@ -471,7 +471,7 @@ export default function SmartConfigurator() {
                         </div>
                         
                         <div className="pt-6 border-t border-white/5">
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Global Telecomunicaciones Digitales | Priority Support 24/7</p>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Global++ | Priority Support 24/7</p>
                         </div>
                     </motion.div>
                 )}

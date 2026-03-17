@@ -72,7 +72,7 @@ export default function RegisterPage() {
                             Ecosistema de <span className="text-primary italic">Socios</span>
                         </h1>
                         <p className="text-slate-500 font-bold text-[9px] uppercase tracking-[4px] mt-2">
-                            Grado Arquitectónico Global Telecomunicaciones Digitales
+                            Grado Arquitectónico Global++
                         </p>
                     </div>
                 </div>

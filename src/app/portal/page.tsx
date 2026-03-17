@@ -400,7 +400,7 @@ export default function PortalPage() {
 
         {/* Banner de Marca Blanca */}
         <div className="p-4 bg-[#0a0a0a] border-t border-white/5 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-          <span className="text-primary">Soporte Técnico 24/7:</span> +52 800-GLOBAL-TEC &nbsp;|&nbsp; Soluciones por <span className="text-white">Global Telecomunicaciones Digitales</span>
+          <span className="text-primary">Soporte Técnico 24/7:</span> +52 800-GLOBAL-TEC &nbsp;|&nbsp; Soluciones por <span className="text-white">Global++</span>
         </div>
       </main>
 

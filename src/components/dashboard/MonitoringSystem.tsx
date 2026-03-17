@@ -20,7 +20,7 @@ export default function MonitoringSystem({ branch, client, onClose }: { branch: 
                         <div className="w-8 h-8 relative">
                             <Image 
                                 src="/logo-global.png" 
-                                alt="Global Telecomunicaciones Digitales Logo" 
+                                alt="Global++ Logo" 
                                 fill
                                 className="object-contain drop-shadow-glow"
                             />
@@ -50,7 +50,7 @@ export default function MonitoringSystem({ branch, client, onClose }: { branch: 
                 <CameraCell id="CAM 01" label="ENTRY POINT" bitrate="2240" image="/images/cctv/entry_point.png" />
                 <CameraCell id="CAM 02" label="PERIMETER NW" bitrate="4112" image="/images/cctv/perimeter.png" />
                 <CameraCell id="CAM 03" label="SERVER ROOM" bitrate="1056" image="/images/cctv/server_room.png" />
-                <CameraCell id="CAM 04" label="RECEPTION" bitrate="2048" />
+                <CameraCell id="CAM 04" label="RECEPTION" bitrate="2048" image="/images/cctv/reception.png" />
             </div>
 
             <footer className="h-14 bg-slate-900 border-t border-white/10 flex items-center justify-center gap-8 shrink-0">

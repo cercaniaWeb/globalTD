@@ -145,7 +145,7 @@ export default function StorePage() {
                         <div className="w-10 h-10 relative">
                             <Image 
                                 src="/logo-global.png" 
-                                alt="Global Telecomunicaciones Digitales Logo" 
+                                alt="Global++ Logo" 
                                 fill
                                 className="object-contain"
                             />
@@ -174,7 +174,7 @@ export default function StorePage() {
                                 <ShieldCheck className="w-4 h-4 text-primary" /> Distribuidor Autorizado Syscom
                             </div>
                             <h1 className="text-5xl font-extrabold uppercase tracking-tight text-slate-900 leading-none">Suministro <span className="text-primary">Técnico</span></h1>
-                            <p className="text-slate-500 font-medium max-w-xl">Soluciones integrales en el suministro de equipos críticos con el respaldo de Global Telecomunicaciones Digitales.</p>
+                            <p className="text-slate-500 font-medium max-w-xl">Soluciones integrales en el suministro de equipos críticos con el respaldo de Global++.</p>
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">

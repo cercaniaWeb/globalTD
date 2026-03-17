@@ -13,7 +13,7 @@ import {
     X
 } from 'lucide-react'
 import ARMeasurement from './ARMeasurement'
-
+import MeasurementViewer from './MeasurementViewer'
 import CotizadorModal from './CotizadorModal'
 
 type CRMLead = {
@@ -36,6 +36,8 @@ export default function CRMView({ addNotification }: { addNotification: (msg: st
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [newLeadName, setNewLeadName] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [measurementsMap, setMeasurementsMap] = useState<Record<string, Measurement3D[]>>({})
+    const [activeMeasurements, setActiveMeasurements] = useState<Measurement3D[] | null>(null)
 
     const fetchLeads = useCallback(async () => {
         setLoading(true)
@@ -47,7 +49,25 @@ export default function CRMView({ addNotification }: { addNotification: (msg: st
         if (error) {
             console.error('Error fetching leads:', error)
         } else {
-            setLeads((data || []) as CRMLead[])
+            const leadsData = (data || []) as CRMLead[]
+            setLeads(leadsData)
+
+            // Fetch measurements for all these leads
+            const { data: measurements } = await supabase
+                .from('crm_measurements')
+                .select('*')
+                .in('lead_id', leadsData.map(l => l.id))
+
+            if (measurements) {
+                const map: Record<string, Measurement3D[]> = {}
+                measurements.forEach(m => {
+                    if (m.lead_id) {
+                        if (!map[m.lead_id]) map[m.lead_id] = []
+                        map[m.lead_id].push(m as unknown as Measurement3D)
+                    }
+                })
+                setMeasurementsMap(map)
+            }
         }
         setLoading(false)
     }, [])
@@ -87,7 +107,11 @@ export default function CRMView({ addNotification }: { addNotification: (msg: st
     )
 
     if (activeLeadForAR) {
-        return <ARMeasurement lead={activeLeadForAR} onClose={() => setActiveLeadForAR(null)} addNotification={addNotification} />
+        return <ARMeasurement lead={activeLeadForAR} onClose={() => { setActiveLeadForAR(null); fetchLeads() }} addNotification={addNotification} />
+    }
+
+    if (activeMeasurements) {
+        return <MeasurementViewer measurements={activeMeasurements} onClose={() => setActiveMeasurements(null)} />
     }
 
     return (
@@ -200,8 +224,27 @@ export default function CRMView({ addNotification }: { addNotification: (msg: st
                                             onClick={() => setActiveLeadForAR(lead)}
                                             className="flex-1 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors group/tool"
                                         >
-                                            <Ruler size={12} className="group-hover/tool:animate-pulse" /> Levantamiento 3D
+                                            <Ruler size={12} className="group-hover/tool:animate-pulse" /> {measurementsMap[lead.id]?.length > 0 ? `Ver (${measurementsMap[lead.id].length})` : 'Levantamiento'}
+                                            {measurementsMap[lead.id]?.length > 0 && (
+                                                <div 
+                                                    className="absolute -top-10 left-1/2 -translate-x-1/2 glass px-3 py-1 rounded-full opacity-0 group-hover/tool:opacity-100 transition-all pointer-events-none"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setActiveMeasurements(measurementsMap[lead.id])
+                                                    }}
+                                                >
+                                                    MÉTRICAS GUARDADAS
+                                                </div>
+                                            )}
                                         </button>
+                                        {measurementsMap[lead.id]?.length > 0 && (
+                                            <button 
+                                                onClick={() => setActiveMeasurements(measurementsMap[lead.id])}
+                                                className="absolute -top-2 right-2 bg-primary text-[#0F172A] p-2 rounded-full shadow-lg scale-0 group-hover:scale-100 transition-transform duration-300"
+                                            >
+                                                <Search size={14} />
+                                            </button>
+                                        )}
                                     </div>
 
                                     <div className="pt-2 border-t border-white/5 flex justify-between items-center">
@@ -264,4 +307,14 @@ export default function CRMView({ addNotification }: { addNotification: (msg: st
             )}
         </div>
     )
+}
+
+type Measurement3D = {
+    id: string;
+    created_at: string;
+    lead_id: string;
+    from_point: { x: number; y: number; z: number };
+    to_point: { x: number; y: number; z: number };
+    distance: number;
+    label: string;
 }

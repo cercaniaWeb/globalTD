@@ -44,7 +44,7 @@ export default function Home() {
                 </h1>
 
                 <p className="text-lg md:text-xl text-slate-300 max-w-xl font-medium leading-relaxed uppercase tracking-wider drop-shadow-lg">
-                  Desplegamos infraestructura de videovigilancia de alta integridad con estándar industrial para empresas y residencias de alto valor.
+                  No solo vendemos equipos; desplegamos <span className="text-primary font-black italic">GLOBAL++</span>, nuestra arquitectura de seguridad institucional diseñada para entornos de alta complejidad.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-6 pt-4">
@@ -79,7 +79,7 @@ export default function Home() {
                 <div className="relative rounded-[56px] overflow-hidden border border-white/10 aspect-square shadow-4xl z-10">
                    <Image 
                       src="/hero-cctv.png" 
-                      alt="Sistema de CCTV Profesional - Global Telecomunicaciones Digitales" 
+                      alt="Sistema de CCTV Profesional - Global++" 
                       fill
                       sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-cover transition-all group-hover:scale-110 duration-1000 grayscale-[0.2] group-hover:grayscale-0"
@@ -111,34 +111,34 @@ export default function Home() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-20 text-balance">
               <div className="max-w-2xl space-y-6">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[3px]">
-                  Servicios Global Tech
+                  Global++ Ecosystem
                 </div>
                 <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic text-white leading-none">
-                  Ingeniería en <br /><span className="text-primary text-shadow-glow">Seguridad Crítica</span>
+                  Control Absoluto en la <br /><span className="text-primary text-shadow-glow">Palma de tu Mano</span>
                 </h2>
               </div>
               <p className="text-slate-400 font-medium max-w-sm uppercase tracking-widest text-[10px] leading-relaxed">
-                Nuestros procesos de ingeniería garantizan que cada pixel cuente y cada acceso esté bajo control total en todo México.
+                Bienvenido a Global++, la plataforma definitiva que unifica tu seguridad. A diferencia de los sistemas tradicionales, Global++ integra videovigilancia, CRM y logística técnica en un solo ecosistema inteligente.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
-                  title: "Video Inteligente",
-                  desc: "CCTV con analíticas de IA para detección de intrusos y reconocimiento facial.",
+                  title: "Global++ Vision",
+                  desc: "Analíticas avanzadas de IA para detección proactiva de riesgos y reconocimiento facial.",
                   icon: <Camera className="w-10 h-10" />,
                   image: "/service-cctv.png"
                 },
                 {
-                  title: "Acceso Biométrico",
-                  desc: "Control de personal y visitas mediante reconocimiento facial y dactilar.",
+                  title: "Identidad Global++",
+                  desc: "Control de accesos biométricos centralizado y seguro mediante biometría facial.",
                   icon: <Shield className="w-10 h-10" />,
                   image: "/service-access.png"
                 },
                 {
-                  title: "Conectividad Pro",
-                  desc: "Redes de fibra óptica e infraestructura inalámbrica industrial.",
+                  title: "Conectividad Grado Pro",
+                  desc: "Backbone de fibra óptica industrial con cero latencia para ambientes críticos.",
                   icon: <Globe className="w-10 h-10" />,
                   image: "/service-network.png"
                 }
@@ -179,11 +179,14 @@ export default function Home() {
             <div className="grid lg:grid-cols-2 gap-20 items-center">
               <div className="space-y-10 order-2 lg:order-1">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[3px]">
-                   Verticales de Negocio
+                   El Estándar de Oro
                 </div>
                 <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic text-white leading-[0.9]">
-                  Soluciones <br /><span className="text-primary text-shadow-glow">Especializadas</span>
+                  Asegura tu Futuro <br /><span className="text-primary text-shadow-glow">con Global++</span>
                 </h2>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-[2px] leading-relaxed max-w-md">
+                  Ofrecemos sistemas de CCTV e infraestructura unificada que garantiza visibilidad total 24/7. Si buscas integridad técnica, buscas Global++.
+                </p>
                 
                 <div className="space-y-6">
                    {[
@@ -245,11 +248,10 @@ export default function Home() {
             <div className="flex items-center gap-4 opacity-70 grayscale hover:grayscale-0 transition-all">
               <Image src="/logo-global.png" alt="Global Tech Logo" width={50} height={50} />
               <div className="flex flex-col">
-                <span className="text-xl font-black uppercase text-white leading-none">Global <span className="text-primary">Telecomunicaciones</span></span>
-                <span className="text-[7px] font-bold text-slate-500 tracking-[3px] mt-1 uppercase">Digitales México</span>
+                <span className="text-xl font-black uppercase text-white leading-none">Global++</span>
               </div>
             </div>
-            <p className="text-slate-600 text-[9px] font-bold uppercase tracking-[4px]">© 2026 Global Telecomunicaciones Digitales. Expertos en Seguridad.</p>
+            <p className="text-slate-600 text-[9px] font-bold uppercase tracking-[4px]">© 2026 Global++ | Expertos en Seguridad.</p>
             <div className="flex gap-8">
               <Link href="#" className="text-slate-500 hover:text-white transition-colors text-[9px] font-black uppercase tracking-[2px]">Aviso de Privacidad</Link>
               <Link href="#" className="text-slate-500 hover:text-white transition-colors text-[9px] font-black uppercase tracking-[2px]">Términos Legales</Link>

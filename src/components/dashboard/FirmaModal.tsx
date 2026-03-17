@@ -30,7 +30,7 @@ export default function FirmaModal({ order, onClose, onConfirm, addNotification 
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(22)
         doc.setTextColor(27, 38, 59) // Oxford Blue
-        doc.text('Global Telecomunicaciones Digitales', 14, 20)
+        doc.text('Global++', 14, 20)
 
         doc.setFontSize(14)
         doc.setTextColor(0)

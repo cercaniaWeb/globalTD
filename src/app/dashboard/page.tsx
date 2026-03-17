@@ -227,8 +227,8 @@ function OperationsDashboard() {
                         <Shield className="text-[#0F172A] w-6 h-6" />
                     </div>
                     <div>
-                        <span className="text-xl font-black tracking-tighter italic block leading-none text-white">CORE</span>
-                        <span className="text-xs font-bold text-primary tracking-[2px]">SYSTEMS</span>
+                        <span className="text-xl font-black tracking-tighter italic block leading-none text-white">GLOBAL</span>
+                        <span className="text-xs font-bold text-primary tracking-[2px]">++</span>
                     </div>
                 </div>
 

@@ -73,7 +73,7 @@ export default function LoginPage() {
                         <div className="w-16 h-16 bg-slate-900 border border-white/10 rounded-[22px] flex items-center justify-center p-3 shadow-2xl group-hover:scale-105 group-hover:border-primary/50 transition-all relative overflow-hidden">
                             <Image 
                                 src="/logo-global.png" 
-                                alt="Global Telecomunicaciones Digitales" 
+                                alt="Global++" 
                                 fill
                                 className="object-contain p-1 drop-shadow-glow"
                             />
@@ -84,7 +84,7 @@ export default function LoginPage() {
                             Acceso <span className="text-primary italic">Seguro</span>
                         </h1>
                         <p className="text-slate-400 font-bold text-[9px] uppercase tracking-[4px]">
-                            Ecosistema Global Telecomunicaciones Digitales
+                            Ecosistema Global++
                         </p>
                     </div>
                 </div>
@@ -195,7 +195,7 @@ export default function LoginPage() {
                         <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div> Servidor Operativo</span>
                     </div>
                     <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[4px]">
-                        © 2026 Global Telecomunicaciones Digitales | INGENIERÍA DE DETALLE
+                        © 2026 Global++ | INGENIERÍA DE DETALLE
                     </p>
                 </div>
             </div>

@@ -73,7 +73,6 @@ export default function AccesosView() {
                                 <th className="px-10 py-6">Status</th>
                                 <th className="px-10 py-6">Cliente Propietario</th>
                                 <th className="px-10 py-6">Equipo / IP</th>
-                                <th className="px-10 py-6">Equipo / IP</th>
                                 <th className="px-10 py-6">Credenciales Remotas</th>
                             </tr>
                         </thead>

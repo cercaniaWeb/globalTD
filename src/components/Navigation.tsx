@@ -8,11 +8,11 @@ export default function Navigation() {
   return (
     <nav className="fixed top-0 w-full z-50 glass border-b border-white/5" role="navigation">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3" aria-label="Global Telecomunicaciones Digitales - Home">
+        <Link href="/" className="flex items-center gap-3" aria-label="Global++ - Home">
           <div className="relative w-12 h-12">
             <Image 
               src="/logo-global.png" 
-              alt="Logo Global Telecomunicaciones Digitales - Ingeniería en Seguridad" 
+              alt="Logo Global++ - Ingeniería en Seguridad" 
               fill
               sizes="48px"
               className="object-contain"
@@ -21,9 +21,8 @@ export default function Navigation() {
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-black uppercase tracking-tighter italic text-white leading-none">
-              Global <span className="text-primary text-shadow-glow">Telecomunicaciones</span>
+              Global++
             </span>
-            <span className="text-[7px] font-bold uppercase tracking-[4px] text-slate-500 mt-1">Digitales</span>
           </div>
         </Link>
 

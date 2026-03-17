@@ -16,15 +16,15 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://globaltelecomunicaciones.mx"),
-  title: "Global Telecomunicaciones Digitales | Soluciones en Telecomunicaciones y Seguridad",
-  description: "Líderes en infraestructura de seguridad de alta integridad. Especialistas en CCTV, Control de Acceso y Redes con ingeniería de detalle.",
-  keywords: ["Global Telecomunicaciones Digitales", "Security", "Seguridad Electrónica", "CCTV Premium", "Control de Acceso", "Ingeniería de Detalle", "Infraestructura Crítica"],
-  authors: [{ name: "Global Telecomunicaciones Digitales Team" }],
+  title: "Global++ | Ecosistema de Seguridad Inteligente",
+  description: "Global++ unifica tu seguridad. Videovigilancia, CRM y logística técnica en un solo ecosistema inteligente de alta integridad.",
+  keywords: ["Global++", "Security", "Seguridad Electrónica", "CCTV Premium", "Logística Técnica", "Ecosistema Inteligente"],
+  authors: [{ name: "Global++ Engineering Team" }],
   openGraph: {
-    title: "Global Telecomunicaciones Digitales | Protección de Alto Nivel",
-    description: "Infraestructura de seguridad robusta y personalizada con inteligencia integral.",
+    title: "Global++ | Ecosistema de Protección Inteligente",
+    description: "La plataforma definitiva que unifica videovigilancia, CRM y logística técnica.",
     url: "https://globaltelecomunicaciones.mx/",
-    siteName: "Global Telecomunicaciones Digitales",
+    siteName: "Global++",
     images: [
       {
         url: "/og-image.png",
@@ -56,7 +56,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "LocalBusiness",
-              "name": "Global Telecomunicaciones Digitales",
+              "name": "Global++",
               "image": "https://globaltelecomunicaciones.mx/logo-global.png",
               "@id": "https://globaltelecomunicaciones.mx/",
               "url": "https://globaltelecomunicaciones.mx/",
@@ -90,11 +90,11 @@ export default function RootLayout({
               "sameAs": [
                 "https://www.linkedin.com/company/global-telecomunicaciones-digitales"
               ],
-              "description": "Expertos en Instalación de CCTV, Control de Acceso e Ingeniería de Seguridad Electrónica en México.",
+              "description": "Global++: Ecosistema inteligente que unifica videovigilancia, CRM y logística técnica en México.",
               "areaServed": "México",
               "provider": {
                 "@type": "Organization",
-                "name": "Global Telecomunicaciones Digitales"
+                "name": "Global++"
               }
             })
           }}

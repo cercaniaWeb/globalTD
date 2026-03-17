@@ -101,7 +101,7 @@ export default function CotizadorModal({ lead, onClose, addNotification }: { lea
             doc.setTextColor(255, 255, 255)
             doc.setFontSize(22)
             doc.setFont('helvetica', 'bold')
-            doc.text('Global Telecomunicaciones Digitales', 14, 20)
+            doc.text('Global++', 14, 20)
             doc.setFontSize(8)
             doc.setTextColor(197, 160, 89)
             doc.text('INGENIERÍA DE DETALLE EN SEGURIDAD ELECTRÓNICA', 14, 28)
@@ -185,7 +185,7 @@ export default function CotizadorModal({ lead, onClose, addNotification }: { lea
             doc.setFontSize(7)
             doc.setFont('helvetica', 'normal')
             doc.setTextColor(150, 150, 150)
-            doc.text('Este documento es una propuesta técnica basada en Soluciones por Global Telecomunicaciones Digitales.', 14, pageHeight - 15)
+            doc.text('Este documento es una propuesta técnica basada en Soluciones por Global++.', 14, pageHeight - 15)
 
             doc.save(`Cotizacion_${lead?.client_name?.replace(/\s+/g, '_')}.pdf`)
 
