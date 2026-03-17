@@ -15,7 +15,8 @@ import {
     Hammer,
     Zap,
     Key,
-    UserPlus
+    UserPlus,
+    Trello
 } from 'lucide-react'
 
 // Dashboard Components
@@ -27,6 +28,7 @@ import AccesosView from '@/components/dashboard/AccesosView'
 import CalendarView from '@/components/dashboard/CalendarView'
 import TasksView from '@/components/dashboard/TasksView'
 import CRMView from '@/components/dashboard/CRMView'
+import ProjectsView from '@/components/dashboard/ProjectsView'
 import MonitoringSystem from '@/components/dashboard/MonitoringSystem'
 import OrderModal from '@/components/dashboard/OrderModal'
 import { SidebarItem } from '@/components/dashboard/SharedComponents'
@@ -239,6 +241,7 @@ function OperationsDashboard() {
                     <SidebarItem icon={<Key size={18} />} label="Accesos" active={activeTab === 'accesos'} onClick={() => setActiveTab('accesos')} />
                     <SidebarItem icon={<Calendar size={18} />} label="Calendario" active={activeTab === 'calendario'} onClick={() => setActiveTab('calendario')} />
                     <SidebarItem icon={<ClipboardList size={18} />} label="Tareas" active={activeTab === 'tareas'} onClick={() => setActiveTab('tareas')} />
+                    <SidebarItem icon={<Trello size={18} />} label="Proyectos" active={activeTab === 'proyectos'} onClick={() => setActiveTab('proyectos')} />
                 </nav>
 
                 <div className="pt-8 border-t border-white/5 space-y-4 text-slate-500">
@@ -347,6 +350,7 @@ function OperationsDashboard() {
                     {activeTab === 'accesos' && <AccesosView />}
                     {activeTab === 'calendario' && <CalendarView addNotification={addNotification} />}
                     {activeTab === 'tareas' && <TasksView addNotification={addNotification} />}
+                    {activeTab === 'proyectos' && <ProjectsView addNotification={addNotification} />}
                 </div>
             </main>
 
@@ -378,6 +382,10 @@ function OperationsDashboard() {
                 <button onClick={() => setActiveTab('tareas')} className={`flex-1 flex flex-col items-center justify-center p-2 rounded-xl transition-all ${activeTab === 'tareas' ? 'text-primary bg-primary/10' : 'text-slate-500 hover:text-slate-300'}`}>
                     <ClipboardList size={20} />
                     <span className="text-[8px] font-black uppercase mt-1">Tareas</span>
+                </button>
+                <button onClick={() => setActiveTab('proyectos')} className={`flex-1 flex flex-col items-center justify-center p-2 rounded-xl transition-all ${activeTab === 'proyectos' ? 'text-primary bg-primary/10' : 'text-slate-500 hover:text-slate-300'}`}>
+                    <Trello size={20} />
+                    <span className="text-[8px] font-black uppercase mt-1">Proyectos</span>
                 </button>
             </nav>
 
